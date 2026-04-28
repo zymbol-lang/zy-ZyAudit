@@ -1,0 +1,67 @@
+// EN: 译文.zy — i18n output layer for ZyAudit. Prefix: 译
+// ES: 译文.zy — capa de salida i18n para ZyAudit. Prefijo: 译
+// ZH: 译文.zy — ZyAudit 的 i18n 输出层。导出前缀：译
+// ZH routes directly to formatter; ES/EN translate via Ollama first.
+// Expects doc-field tuples: (功能: string, 参数: string, 返回: string)
+
+# .译文 {
+    <# ./召模 <= 模
+    <# ./析答 <= 答
+    <# ./国际化 <= 国
+
+    #> {
+        译_格式化
+        译_构提
+        译_翻译
+        译_文档
+    }
+
+    // EN: Formats a doc-field tuple into a comment block with language-specific labels.
+    // ES: Formatea un tuple de campos en un bloque de comentario con etiquetas por idioma.
+    // ZH: 将文档字段元组格式化为带语言标签的注释块。语言: "ZH" | "ES" | "EN"
+    译_格式化(字段, 语言) {
+        标功 = 国::国_查("注功能", 语言)
+        标参 = 国::国_查("注参数", 语言)
+        标返 = 国::国_查("注返回", 语言)
+        注释 = 标功 $+ 字段.功能 $+ "\n"
+        注释 = 注释 $+ 标参 $+ 字段.参数 $+ "\n"
+        注释 = 注释 $+ 标返 $+ 字段.返回
+        <~ 注释
+    }
+
+    // EN: Builds an Ollama translation prompt. Instructs model to keep the three markers for 析答 re-parsing.
+    // ES: Construye el prompt de traducción para Ollama. Los tres marcadores deben conservarse.
+    // ZH: 构建 Ollama 翻译提示词。要求模型保留三个标记行以供 析答 重新解析。
+    译_构提(字段, 语言) {
+        目语  = 国::国_查("译目语", 语言)
+        提示  = "请将以下 Zymbol 函数文档的值翻译为" $+ 目语 $+ "。\n"
+        提示  = 提示 $+ "保持以下格式不变（仅三行），只翻译冒号后的内容：\n\n"
+        提示  = 提示 $+ "// 功能：" $+ 字段.功能 $+ "\n"
+        提示  = 提示 $+ "// 参数：" $+ 字段.参数 $+ "\n"
+        提示  = 提示 $+ "// 返回：" $+ 字段.返回
+        <~ 提示
+    }
+
+    // EN: Sends translation prompt to Ollama and parses with 答_解析. Falls back to original on invalid format.
+    // ES: Envía prompt de traducción a Ollama y parsea con 答_解析. Fallback a original si formato inválido.
+    // ZH: 发送翻译提示词到 Ollama 并用 答_解析 解析，格式无效时回退到原始字段。
+    译_翻译(字段, 语言, 模型, 配置) {
+        提示   = 译_构提(字段, 语言)
+        原响   = 模::模_发送(提示, 模型, 配置)
+        结     = 答::答_解析(原响, 配置.临目)
+        译字段 = 字段
+        ? (结.有效) {
+            译字段 = (功能: 结.功能, 参数: 结.参数, 返回: 结.返回)
+        }
+        <~ 译字段
+    }
+
+    // EN: Main entry. ZH → format directly; ES/EN → translate then format. Returns comment block string.
+    // ES: Entrada principal. ZH → formatea directo; ES/EN → traduce y formatea. Devuelve bloque de comentario.
+    // ZH: 主入口。ZH 直接格式化；ES/EN 先翻译再格式化。返回注释块字符串。
+    译_文档(字段, 语言, 模型, 配置) {
+        译字段 = 字段
+        ? (语言 <> "ZH") { 译字段 = 译_翻译(字段, 语言, 模型, 配置) }
+        <~ 译_格式化(译字段, 语言)
+    }
+}

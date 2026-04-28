@@ -1,0 +1,17 @@
+// EN: 国际化.zy — dynamic i18n label lookup from i18n.json. Prefix: 国
+// ES: 国际化.zy — consulta dinámica de etiquetas i18n desde i18n.json. Prefijo: 国
+// ZH: 国际化.zy — 从 i18n.json 动态查询界面标签。导出前缀：国
+// Falls back to ZH if the requested language or key is absent.
+// To add a language: add a block to i18n.json — no code changes needed.
+
+# .国际化 {
+    #> { 国_查 }
+
+    // EN: Returns the label for 键 in 语言. Fallback: 语言 → ZH → empty string.
+    // ES: Devuelve la etiqueta para 键 en 语言. Fallback: 语言 → ZH → cadena vacía.
+    // ZH: 返回 键 在 语言 中的标签。回退链：语言 → ZH → 空字符串。
+    国_查(键, 语言) {
+        值 = <\ "jq -r --arg l '" 语言 "' --arg k '" 键 "' '.[$l][$k] // .ZH[$k] // \"\"' i18n.json 2>/dev/null" \>
+        <~ 值$~~["\n":""]
+    }
+}

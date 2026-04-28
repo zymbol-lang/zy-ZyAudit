@@ -1,0 +1,95 @@
+// EN: 计量.zy — calculates quality metrics from 解析.zy output. Export prefix: 量
+// ES: 计量.zy — calcula métricas de calidad a partir de la salida de 解析.zy. Prefijo: 量
+// ZH: 计量.zy — 从解析.zy输出计算质量指标。导出前缀：量
+
+# 计量 {
+    #> {
+        量_代码行数
+        量_函数密度
+        量_圈复杂度
+        量_文档覆盖率
+        量_计算全部
+    }
+
+    // EN: Effective code lines = total - comments - blanks. 行统 values arrive as strings (wc/grep via BashExec).
+    // ES: Líneas de código efectivo = total - comentarios - blancos. Valores de 行统 como strings (wc/grep).
+    // ZH: 有效代码行 = 总行 - 注释行 - 空行。行统 值为字符串（wc/grep BashExec 输出）。
+    量_代码行数(行统) {
+        总 = 行统.总计
+        注 = 行统.注释
+        空 = 行统.空行
+        结 = <\ "echo $((" 总 " - " 注 " - " 空 "))" \>
+        <~ 结$~~["\n":""]
+    }
+
+    // EN: Density = functions * 100 / total lines. Returns "X.XX".
+    // ES: Densidad = funciones * 100 / líneas totales. Devuelve "X.XX".
+    // ZH: 密度 = 函数数 * 100 / 总行数。返回 "X.XX"。
+    量_函数密度(函数量, 总行) {
+        密度 = <\ "awk 'BEGIN\{printf \"%.2f\", (" 函数量 " * 100) / " 总行 "\}'" \>
+        <~ 密度$~~["\n":""]
+    }
+
+    // EN: Approximate cyclomatic complexity. Base 1 + decision points: ? _? @ !?
+    // ES: Complejidad ciclomática aproximada. Base 1 + puntos de decisión: ? _? @ !?
+    // ZH: 近似圈复杂度。基值 1 + 决策点：? _? @ !?
+    量_圈复杂度(路径) {
+        条件 = <\ "grep -cP '^\\s*(_\\?|\\?(?!\\?))' '" 路径 "' || echo 0" \>
+        循环 = <\ "grep -cP '^\\s*@(?![!>:])' '" 路径 "' || echo 0" \>
+        错误 = <\ "grep -cP '^\\s*!\\?' '" 路径 "' || echo 0" \>
+        条件 = 条件$~~["\n":""]
+        循环 = 循环$~~["\n":""]
+        错误 = 错误$~~["\n":""]
+        复杂度 = <\ "echo $((" 条件 " + " 循环 " + " 错误 " + 1))" \>
+        <~ 复杂度$~~["\n":""]
+    }
+
+    // EN: Documentation coverage: % of functions with a // comment on the preceding line.
+    // ES: Cobertura de documentación: % de funciones con comentario // en la línea anterior.
+    // ZH: 文档覆盖率：前一行有 // 注释的函数占比。
+    量_文档覆盖率(路径, 函列) {
+        已注释 = 0
+        @ 函:函列 {
+            行号 = 函.行号
+            行前 = <\ "echo $((" 行号 " - 1))" \>
+            行前 = 行前$~~["\n":""]
+            有注 = <\ "sed -n '" 行前 "p' '" 路径 "' | grep -c '//' || echo 0" \>
+            有注 = 有注$~~["\n":""]
+            ? (有注 == "1") {
+                已注释 = 已注释 + 1
+            }
+        }
+        函数量 = 函列$#
+        ? (函数量 == 0) { <~ "0%" }
+        百分比 = <\ "awk 'BEGIN\{printf \"%d\", (" 已注释 " * 100) / " 函数量 "\}'" \>
+        百分比 = 百分比$~~["\n":""]
+        <~ 百分比 $+ "%"
+    }
+
+    // EN: Aggregates all metrics into a single output tuple from 解_分析文件.
+    // ES: Agrega todos los indicadores en un único tuple de salida desde 解_分析文件.
+    // ZH: 将所有指标聚合为单一输出元组，输入为解_分析文件的完整元组。
+    量_计算全部(分析结果) {
+        路径   = 分析结果.路径
+        行统   = 分析结果.行数
+        函列   = 分析结果.函数
+        代码行 = 量_代码行数(行统)
+        函数量 = 分析结果.函数量
+        密度   = 量_函数密度(函数量, 行统.总计)
+        复杂度 = 量_圈复杂度(路径)
+        覆盖率 = 量_文档覆盖率(路径, 函列)
+        <~ (
+            路径:   路径,
+            总行:   行统.总计,
+            代码行: 代码行,
+            注释行: 行统.注释,
+            空行:   行统.空行,
+            函数量: 函数量,
+            密度:   密度,
+            深度:   分析结果.深度,
+            复杂度: 复杂度,
+            覆盖率: 覆盖率,
+            未用:   分析结果.未用
+        )
+    }
+}

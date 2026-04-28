@@ -1,0 +1,72 @@
+// EN: 析答.zy — Ollama response parser for ZyAudit. Prefix: 答
+// ES: 析答.zy — parser de respuestas Ollama para ZyAudit. Prefijo: 答
+// ZH: 析答.zy — ZyAudit 的 Ollama 响应解析器。导出前缀：答
+// Stateless: temp directory passed as parameter.
+// Expects responses with three markers: // 功能：  // 参数：  // 返回：
+
+# .析答 {
+    #> {
+        答_清理
+        答_验证
+        答_提取字段
+        答_解析
+    }
+
+    // EN: Strips markdown code fences and restores the APOS placeholder. Uses a temp file + sed.
+    // ES: Elimina cercas de código markdown y restaura el marcador APOS. Usa archivo temporal + sed.
+    // ZH: 删除 markdown 代码围栏并还原 APOS 占位符。通过临时文件 + sed 处理。
+    答_清理(原文, 临目) {
+        <\ "mkdir -p " 临目 \>
+        临文  = 临目 $+ "/原答.txt"
+        净文件 = 临目 $+ "/净答.txt"
+        安全  = 原文$~~["'":"(APOS)"]
+        <\ "printf '%s' '" 安全 "' > " 临文 \>
+        <\ "sed '/^[[:space:]]*```/d' " 临文 " > " 净文件 \>
+        净文 = <\ "cat " 净文件 \>
+        <~ 净文$~~["(APOS)":"'"]
+    }
+
+    // EN: Returns #1 if text contains all three required doc-comment markers.
+    // ES: Devuelve #1 si el texto contiene los tres marcadores de comentario requeridos.
+    // ZH: 若文本包含三个必需的文档注释标记则返回 #1。
+    答_验证(文本) {
+        有功 = 文本$? "// 功能："
+        有参 = 文本$? "// 参数："
+        有返 = 文本$? "// 返回："
+        <~ (有功 && 有参 && 有返)
+    }
+
+    // EN: Extracts 功能, 参数, 返回 field values from matching comment lines. Returns named tuple.
+    // ES: Extrae los campos 功能, 参数, 返回 de las líneas de comentario. Devuelve tuple nombrado.
+    // ZH: 从匹配的注释行中提取 功能、参数、返回 字段值，返回命名元组。
+    答_提取字段(文本) {
+        各行 = 文本 $/ "\n"
+        功能 = ""
+        参数 = ""
+        返回 = ""
+        @ 行:各行 {
+            整行 = 行$~~["\r":""]
+            ? (整行$? "// 功能：") {
+                功能 = 整行$~~["// 功能：":""]
+            }
+            ? (整行$? "// 参数：") {
+                参数 = 整行$~~["// 参数：":""]
+            }
+            ? (整行$? "// 返回：") {
+                返回 = 整行$~~["// 返回：":""]
+            }
+        }
+        <~ (功能: 功能, 参数: 参数, 返回: 返回)
+    }
+
+    // EN: Full pipeline: clean fences → validate → extract fields → structured tuple.
+    // ES: Flujo completo: limpiar cercas → validar → extraer campos → tuple estructurado.
+    // ZH: 完整流程：清除围栏 → 验证 → 提取字段 → 结构化元组。
+    // Returns (有效: bool, 净文: string, 功能: string, 参数: string, 返回: string).
+    答_解析(原文, 临目) {
+        净文 = 答_清理(原文, 临目)
+        有效 = 答_验证(净文)
+        字段 = 答_提取字段(净文)
+        <~ (有效: 有效, 净文: 净文, 功能: 字段.功能, 参数: 字段.参数, 返回: 字段.返回)
+    }
+}

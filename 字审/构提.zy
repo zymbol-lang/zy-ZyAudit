@@ -1,0 +1,80 @@
+// EN: 构提.zy — builds Chinese prompts for Ollama. Export prefix: 提
+// ES: 构提.zy — construye prompts en chino para Ollama. Prefijo: 提
+// ZH: 构提.zy — 构建发给 Ollama 的中文提示词。导出前缀：提
+// Prompts use real \n strings; JSON encoding is handled by 召模.zy.
+// Source extraction via sed BashExec (GAP: no std/fs available).
+
+# 构提 {
+    #> {
+        提_函数文档
+        提_审计摘要
+        提_全部函数
+    }
+
+    // EN: Extracts function source starting at the given line. Takes up to 25 lines.
+    // ES: Extrae el código fuente de una función a partir de su línea de inicio. Hasta 25 líneas.
+    // ZH: 从指定行号提取函数源码，最多取 25 行，足以覆盖典型 Zymbol 函数。
+    _提_源码(路径, 行号) {
+        末行 = <\ "echo $((" 行号 " + 25))" \>
+        末行 = 末行$~~["\n":""]
+        源码 = <\ "sed -n '" 行号 "," 末行 "p' '" 路径 "'" \>
+        <~ 源码
+    }
+
+    // EN: Builds the documentation prompt for a single function.
+    // ES: Construye el prompt de documentación para una función.
+    // ZH: 构建单个函数的文档生成提示词。
+    // 函: named tuple (名称, 行号, 参数量) from 解_提取函数; 路径: source file path
+    提_函数文档(函, 路径) {
+        名称   = 函.名称
+        参数量 = 函.参数量
+        行号   = 函.行号
+        源码   = _提_源码(路径, 行号)
+        // Build prompt line by line — $+ chains strings, $++ converts non-string
+        提示  = "请为以下 Zymbol 函数生成简洁的中文文档注释。\n\n"
+        提示  = 提示 $+ "函数名：" $+ 名称 $+ "\n"
+        提示  = 提示 $+ "参数数量：" $+ 参数量 $+ "\n"
+        提示  = 提示 $+ "语言：Zymbol（无关键字符号语言，`<~` 为 return，`?` 为 if，`@` 为 loop）\n"
+        提示  = 提示 $+ "源码：\n" $+ 源码 $+ "\n"
+        提示  = 提示 $+ "要求：\n"
+        提示  = 提示 $+ "1. 用一句话描述函数功能\n"
+        提示  = 提示 $+ "2. 说明每个参数的含义\n"
+        提示  = 提示 $+ "3. 说明返回值\n"
+        提示  = 提示 $+ "4. 如有边界条件（如除数为零、空数组），请注明\n\n"
+        提示  = 提示 $+ "输出格式（仅注释文本，不加代码块标记）：\n"
+        提示  = 提示 $+ "// 功能：...\n// 参数：...\n// 返回：..."
+        <~ 提示
+    }
+
+    // EN: Builds the audit summary prompt. 指标: metrics tuple from 量_计算全部.
+    // ES: Construye el prompt para el resumen ejecutivo del informe de auditoría.
+    // ZH: 构建审计摘要提示词。指标：来自量_计算全部的指标元组。
+    提_审计摘要(指标) {
+        // Convert Int fields to string lines using $++
+        行函数量 = "函数数量：" $++ 指标.函数量 "，密度：" 指标.密度 " 函数/100行"
+        未用数   = 指标.未用$#
+        行未用   = "未使用变量数：" $++ 未用数
+        提示  = "以下是一份 Zymbol 源文件的代码质量审计数据，请用中文生成简洁的审计摘要（3至5句话）。\n\n"
+        提示  = 提示 $+ "文件：" $+ 指标.路径 $+ "\n"
+        提示  = 提示 $+ "总行数：" $+ 指标.总行 $+ "，代码行：" $+ 指标.代码行 $+ "\n"
+        提示  = 提示 $+ 行函数量 $+ "\n"
+        提示  = 提示 $+ "最大嵌套深度：" $+ 指标.深度 $+ "\n"
+        提示  = 提示 $+ "圈复杂度：" $+ 指标.复杂度 $+ "\n"
+        提示  = 提示 $+ "文档覆盖率：" $+ 指标.覆盖率 $+ "\n"
+        提示  = 提示 $+ 行未用 $+ "\n\n"
+        提示  = 提示 $+ "请根据以上数据评估代码质量，并给出最多三条具体改进建议。"
+        <~ 提示
+    }
+
+    // EN: Generates an array of prompts, one per function in 函列. Returns (名称, 提示) tuples.
+    // ES: Genera un array de prompts, uno por función en 函列. Devuelve tuples (名称, 提示).
+    // ZH: 为 函列 中的每个函数生成提示词数组，返回 (名称, 提示) 元组数组。
+    提_全部函数(函列, 路径) {
+        提示列 = []
+        @ 函:函列 {
+            提示  = 提_函数文档(函, 路径)
+            提示列 = 提示列 $+ (名称: 函.名称, 提示: 提示)
+        }
+        <~ 提示列
+    }
+}

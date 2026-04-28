@@ -1,0 +1,154 @@
+// EN: 解析.zy — reads .zy source files and extracts structural metadata. Export prefix: 解
+// ES: 解析.zy — lee archivos fuente .zy y extrae metadatos estructurales. Prefijo: 解
+// ZH: 解析.zy — 读取 .zy 源文件并提取结构元数据。导出前缀：解
+// GAP G4: { } in BashExec strings escaped as \{ \} — awk $0/$1 pass through unchanged
+// GAP-002: slice bounds don't accept inline arithmetic — pre-calculate
+// GAP-003: $++ doesn't accept parenthesized expressions — use intermediate variable
+
+# 解析 {
+    #> {
+        解_读文件
+        解_统计行数
+        解_提取函数
+        解_计算深度
+        解_检测未用
+        解_分析文件
+    }
+
+    // EN: Reads the source text of a file. Returns "" if it does not exist.
+    // ES: Lee el texto fuente de un archivo. Devuelve "" si no existe.
+    // ZH: 读取文件源文本。若文件不存在则返回 ""。
+    解_读文件(路径) {
+        存在 = <\ "test -f '" 路径 "' && echo 1 || echo 0" \>
+        ? (存在$~~["\n":""] == "0") { <~ "" }
+        内容 = <\ "cat '" 路径 "'" \>
+        <~ 内容
+    }
+
+    // EN: Counts total lines, comment lines, and blank lines.
+    // ES: Cuenta líneas totales, líneas de comentario y líneas en blanco.
+    // ZH: 统计总行数、注释行数和空行数。
+    解_统计行数(路径) {
+        总行  = <\ "wc -l < '" 路径 "' | tr -d ' '" \>
+        总行  = 总行$~~["\n":""]
+        注释行 = <\ "grep -c '^\s*//' '" 路径 "' || echo 0" \>
+        注释行 = 注释行$~~["\n":""]
+        空白行 = <\ "grep -c '^\s*$' '" 路径 "' || echo 0" \>
+        空白行 = 空白行$~~["\n":""]
+        <~ (总计: 总行, 注释: 注释行, 空行: 空白行)
+    }
+
+    // EN: Extracts function declarations. Strategy: grep lines with '(' → filter and parse in Zymbol.
+    // ES: Extrae declaraciones de funciones. Grep con '(' → filtrar y parsear en Zymbol.
+    // ZH: 提取函数声明。策略：grep 含 '(' 的行 → 在 Zymbol 中过滤解析。
+    // Returns array of named tuples: (名称, 行号, 参数量)
+    // GAP-002: slice bounds pre-calculated (inline arithmetic not supported)
+    解_提取函数(路径) {
+        原文 = <\ "grep -n '(' '" 路径 "' 2>/dev/null | grep -v '^\s*//' | grep -v '^\s*#'" \>
+        各行 = 原文 $/ "\n"
+        函列 = []
+        @ 行:各行 {
+            行 = 行$~~["\n":""]
+            ? (行$# == 0)   { @> }
+            ? !(行$? ")")   { @> }
+            ? !(行$? "\{")  { @> }
+            // Separar número de línea del contenido (salida de grep -n)
+            冒号位 = 行$?? ":"
+            ? (冒号位$# == 0) { @> }
+            冒点 = 冒号位[1]
+            冒前 = 冒点 - 1
+            冒后 = 冒点 + 1
+            行号 = 行$[1..冒前]
+            余文 = 行$[冒后..-1]
+            // Extraer nombre: texto antes del primer '('
+            括位 = 余文$?? "("
+            ? (括位$# == 0) { @> }
+            括点 = 括位[1]
+            括前 = 括点 - 1
+            括后 = 括点 + 1
+            名   = 余文$[1..括前]
+            名   = 名$~~[" ":""]
+            // Descartar nombres vacíos o con símbolos de control Zymbol
+            ? (名$# == 0) { @> }
+            ? (名$? "?")  { @> }
+            ? (名$? "!")  { @> }
+            ? (名$? "@")  { @> }
+            ? (名$? "<")  { @> }
+            ? (名$? ">")  { @> }
+            ? (名$? "$")  { @> }
+            ? (名$? "=")  { @> }
+            ? (名$? "~")  { @> }
+            ? (名$? ":")  { @> }
+            ? (名$? "|")  { @> }
+            ? (名$? "#")  { @> }
+            ? (名$? "^")  { @> }
+            ? (名$? "+")  { @> }
+            ? (名$? "-")  { @> }
+            ? (名$? "*")  { @> }
+            ? (名$? "/")  { @> }
+            // Extraer parámetros entre '(' y primer ')'
+            括内 = 余文$[括后..-1]
+            闭位 = 括内$?? ")"
+            ? (闭位$# == 0) { @> }
+            闭点 = 闭位[1]
+            闭前 = 闭点 - 1
+            参数 = 括内$[1..闭前]
+            参数 = 参数$~~[" ":""]
+            参数量 = "0"
+            ? (参数$# > 0) {
+                参段 = 参数 $/ ","
+                数量 = 参段$#
+                参数量 = "" $++ 数量
+            }
+            函列 = 函列 $+ (名称: 名, 行号: 行号, 参数量: 参数量)
+        }
+        <~ 函列
+    }
+
+    // EN: Calculates max nesting depth by counting braces.
+    // ES: Calcula la profundidad máxima de anidamiento por conteo de llaves.
+    // ZH: 通过统计花括号计算最大嵌套深度。
+    // GAP G4: awk blocks use \{ \}; char comparisons use "\{" "\}"
+    解_计算深度(路径) {
+        深度 = <\ "awk 'BEGIN\{d=0;m=0\}\{for(i=1;i<=length($0);i++)\{c=substr($0,i,1);if(c==\"\{\")\{d++;if(d>m)m=d\}else if(c==\"\}\")\{d--\}\}\}END\{print m\}' '" 路径 "'" \>
+        <~ 深度$~~["\n":""]
+    }
+
+    // EN: Detects variables declared but appearing only once (never read). Returns array of names.
+    // ES: Detecta variables declaradas pero que aparecen solo una vez (no leídas).
+    // ZH: 检测只出现一次的已声明变量（未被读取）。返回名称字符串数组。
+    解_检测未用(路径) {
+        原变量 = <\ "grep -oP '^[[:space:]]*\\K[\\p\{L\}_][\\p\{L\}\\p\{N\}_]*(?=[[:space:]]*=[^=<>!+\\-*/%^])' '" 路径 "' | sort -u" \>
+        名列  = 原变量 $/ "\n"
+        未用  = []
+        @ 名:名列 {
+            名 = 名$~~["\n":""]
+            ? (名$# == 0) { @> }
+            次数 = <\ "grep -wo '" 名 "' '" 路径 "' | wc -l | tr -d ' '" \>
+            次数 = 次数$~~["\n":""]
+            ? (次数 == "1") {
+                未用 = 未用 $+ 名
+            }
+        }
+        <~ 未用
+    }
+
+    // EN: Runs all analysis steps and returns a single result tuple.
+    // ES: Ejecuta todo el análisis y devuelve un único tuple de resultados.
+    // ZH: 执行全部分析步骤，返回单一结果元组。
+    解_分析文件(路径) {
+        行统   = 解_统计行数(路径)
+        函列   = 解_提取函数(路径)
+        深度   = 解_计算深度(路径)
+        未用   = 解_检测未用(路径)
+        函数量 = 函列$#
+        <~ (
+            路径:   路径,
+            行数:   行统,
+            函数:   函列,
+            函数量: 函数量,
+            深度:   深度,
+            未用:   未用
+        )
+    }
+}

@@ -1,0 +1,23 @@
+// Test 国际化: verify jq-based label lookup for all three languages
+
+<# ../字审/国际化 <= 国
+
+>> "=== ZH ===" ¶
+>> (国::国_查("头标题", "ZH")) ¶
+>> (国::国_查("行路径", "ZH")) ¶
+
+>> "=== ES ===" ¶
+>> (国::国_查("头标题", "ES")) ¶
+>> (国::国_查("行路径", "ES")) ¶
+
+>> "=== EN ===" ¶
+>> (国::国_查("头标题", "EN")) ¶
+>> (国::国_查("行路径", "EN")) ¶
+
+// Fallback: unknown language → ZH
+>> "=== fallback (XX → ZH) ===" ¶
+>> (国::国_查("头标题", "XX")) ¶
+
+// Fallback: unknown key → empty string
+>> "=== fallback (clave_inexistente) ===" ¶
+>> (国::国_查("clave_inexistente", "EN")) ¶

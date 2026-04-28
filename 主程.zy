@@ -1,0 +1,119 @@
+// EN: 主程.zy — entry point and orchestrator for ZyAudit
+// ES: 主程.zy — punto de entrada y orquestador de ZyAudit
+// ZH: 主程.zy — ZyAudit 的入口点与编排器
+// Usage: zymbol run 主程.zy <file.zy> [--语言 ZH|ES|EN] [--模型 name]
+//
+// Flow: 解 parse → 量 metrics → 报 print → 模 check Ollama → 提+模+答+译 per function → 报 write .md
+
+<# ./字审/解析 <= 解
+<# ./字审/计量 <= 量
+<# ./字审/构提 <= 提
+<# ./字审/召模 <= 模
+<# ./字审/析答 <= 答
+<# ./字审/译文 <= 译
+<# ./字审/报告 <= 报
+<# ./字审/国际化 <= 国
+
+参数列 = []   // BUG-002: >< does not declare the variable in semantic scope; pre-declare to silence error
+>< 参数列
+总参 = 参数列$#
+
+? (总参 >= 1) {
+
+    // EN: Parse args  ES: Leer argumentos  ZH: 解析参数
+    路径 = 参数列[1]
+    语言 = "ZH"
+    模型 = "qwen2.5-coder"
+    指   = 2
+    @ 指 <= 总参 {
+        标志 = 参数列[指]
+        下一 = 指 + 1
+        ? (标志 == "--语言" && 下一 <= 总参) { 语言 = 参数列[下一] }
+        ? (标志 == "--模型" && 下一 <= 总参) { 模型 = 参数列[下一] }
+        指 = 指 + 1
+    }
+    // Normalize — unrecognized language defaults to ZH
+    ? !(语言 == "ZH" || 语言 == "ES" || 语言 == "EN") { 语言 = "ZH" }
+
+    // EN: Validate file  ES: Validar archivo  ZH: 验证文件
+    存在 = <\ "test -f '" 路径 "' && echo 1 || echo 0" \>
+    存在 = 存在$~~["\n":""]
+
+    ? (存在 == "1") {
+
+        // EN: Progress/status labels from i18n.json  ES: Etiquetas de estado  ZH: 进度标签
+        生成提示 = 国::国_查("进生成", 语言)
+        不可达   = 国::国_查("进离线", 语言)
+        已写入   = 国::国_查("进完成", 语言)
+
+        // EN: Step 1 · Parse source file  ES: Paso 1 · Parsear archivo  ZH: 第一步 · 解析源文件
+        分析结果 = 解::解_分析文件(路径)
+        函列     = 分析结果.函数
+
+        // EN: Step 2 · Calculate metrics  ES: Paso 2 · Calcular métricas  ZH: 第二步 · 计算指标
+        指标 = 量::量_计算全部(分析结果)
+
+        // EN: Step 3 · Print header + metrics  ES: Paso 3 · Cabecera + métricas  ZH: 第三步 · 打印标题和指标
+        报::报_打印头(语言)
+        报::报_打印指标(指标, 语言)
+        >> "─────────────────────────────────────────" ¶
+
+        // EN: Step 4 · Check Ollama: installed → running → model exists
+        // ES: Paso 4 · Verificar Ollama: instalado → activo → modelo existe
+        // ZH: 第四步 · 检查 Ollama：已安装 → 正在运行 → 模型存在
+        配置   = 模::模_默认配置()
+        注释列 = []
+
+        已装 = 模::模_已装()
+        联通 = 已装 && 模::模_检查(配置)
+        有模 = 联通 && 模::模_存在(模型, 配置)
+
+        ? (有模) {
+            @ 函:函列 {
+                >> "  [" 模型 生成提示 函.名称 ¶
+                提示 = 提::提_函数文档(函, 路径)
+                原响 = 模::模_发送(提示, 模型, 配置)
+                结   = 答::答_解析(原响, 配置.临目)
+                字段 = (功能: 结.功能, 参数: 结.参数, 返回: 结.返回)
+                注释 = 译::译_文档(字段, 语言, 模型, 配置)
+                注释列 = 注释列 $+ 注释
+            }
+            \ 函   // GAP-003: explicit lifetime end
+        } _ {
+            // EN: Fallback: print reason, use placeholder comments
+            // ES: Fallback: imprimir motivo, usar comentarios de placeholder
+            // ZH: 回退：打印原因，使用占位符注释
+            ? !已装 {
+                >> 国::国_查("误未装", 语言) ¶
+            } _? !联通 {
+                >> 不可达 ¶
+            } _ {
+                列表    = 模::模_列表(配置)
+                误模型  = 国::国_查("误模型", 语言)
+                >> 误模型 列表 ¶
+            }
+            空字段 = (功能: "—", 参数: "—", 返回: "—")
+            占位   = 译::译_格式化(空字段, 语言)
+            @ _函:函列 {
+                注释列 = 注释列 $+ 占位
+            }
+        }
+
+        // EN: Step 5 · Write .md report  ES: Paso 5 · Escribir reporte .md  ZH: 第五步 · 写入 .md 报告
+        文档路径 = 报::报_写文件(指标, 函列, 注释列, 语言)
+        >> "─────────────────────────────────────────" ¶
+        >> "  ✓  " 文档路径 "  " 已写入 ¶
+        >> "─────────────────────────────────────────" ¶
+
+    } _ {
+        误文件 = 国::国_查("误文件", 语言)
+        >> 误文件 路径 ¶
+    }
+
+} _ {
+    >> "用法 · Usage:" ¶
+    >> "  zymbol run 主程.zy <文件.zy> [--语言 ZH|ES|EN] [--模型 名称]" ¶
+    >> "  zymbol run 主程.zy <file.zy>  [--语言 ZH|ES|EN] [--模型 name]" ¶
+    >> "例 · Example:" ¶
+    >> "  zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 qwen2.5-coder" ¶
+}

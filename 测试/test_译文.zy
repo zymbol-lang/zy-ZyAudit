@@ -1,0 +1,25 @@
+// Test 译文: format doc fields for ZH / ES / EN (no Ollama needed)
+
+<# ../字审/译文 <= 译
+
+字段 = (功能: "将两个数字相加并返回其和", 参数: "甲: 数字, 乙: 数字", 返回: "甲与乙的和")
+
+// --- ZH: direct format ---
+>> "=== ZH ===" ¶
+注_zh = 译::译_格式化(字段, "ZH")
+>> 注_zh ¶
+
+// --- ES: format labels only (translation requires Ollama) ---
+>> "=== ES ===" ¶
+注_es = 译::译_格式化(字段, "ES")
+>> 注_es ¶
+
+// --- EN: format labels only ---
+>> "=== EN ===" ¶
+注_en = 译::译_格式化(字段, "EN")
+>> 注_en ¶
+
+// --- Translation prompt preview (EN, no Ollama) ---
+>> "=== Translation prompt (EN) ===" ¶
+提示_en = 译::译_构提(字段, "EN")
+>> 提示_en ¶

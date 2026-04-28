@@ -1,0 +1,41 @@
+// Test 析答: parse Ollama responses, all three languages
+
+<# ../字审/析答 <= 答
+
+临目 = "/tmp/ZyAudit"
+
+// --- Sample responses ---
+
+净响应   = "// 功能：Adds two numbers and returns their sum.\n// 参数：甲: number, 乙: number\n// 返回：sum of 甲 and 乙"
+围栏响应 = "```\n// 功能：Computes factorial recursively.\n// 参数：n: non-negative integer\n// 返回：n!\n```"
+缺损响应 = "This function adds two numbers together."
+
+// --- ZH ---
+>> "=== ZH ===" ¶
+
+结1 = 答::答_解析(净响应, 临目)
+>> "净响应 有效: "  (结1.有效) ¶
+>> "功能: "        (结1.功能)  ¶
+>> "参数: "        (结1.参数)  ¶
+>> "返回: "        (结1.返回)  ¶
+
+结2 = 答::答_解析(围栏响应, 临目)
+>> "围栏响应 有效: " (结2.有效) ¶
+>> "功能: "          (结2.功能) ¶
+
+结3 = 答::答_解析(缺损响应, 临目)
+>> "缺损响应 有效: " (结3.有效) ¶
+
+// --- ES: 析答 is language-agnostic; labels are format-only ---
+>> "=== ES ===" ¶
+
+结_es = 答::答_解析(净响应, 临目)
+>> "válido: "  (结_es.有效) ¶
+>> "función: " (结_es.功能) ¶
+
+// --- EN ---
+>> "=== EN ===" ¶
+
+结_en = 答::答_解析(围栏响应, 临目)
+>> "valid: "    (结_en.有效) ¶
+>> "function: " (结_en.功能) ¶

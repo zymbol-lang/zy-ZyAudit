@@ -1,0 +1,135 @@
+// EN: 报告.zy — terminal output and .md file generation for ZyAudit. Prefix: 报
+// ES: 报告.zy — salida en terminal y generación de archivos .md para ZyAudit. Prefijo: 报
+// ZH: 报告.zy — ZyAudit 的终端输出与 .md 文件生成。导出前缀：报
+// Inputs: 指标 (metrics tuple) · 函列 (function array) · 注释列 (formatted comment strings)
+
+# .报告 {
+    <# ./国际化 <= 国
+
+    #> {
+        报_打印头
+        报_打印指标
+        报_写文件
+        报_终端
+        报_生成
+    }
+
+    // EN: Prints divider + title + divider for the given language.
+    // ES: Imprime divisor + título + divisor para el idioma dado.
+    // ZH: 打印分隔线 + 标题 + 分隔线（使用指定语言的标题）。
+    报_打印头(语言) {
+        线   = "─────────────────────────────────────────"
+        标题 = 国::国_查("头标题", 语言)
+        >> 线 ¶
+        >> "  " 标题 ¶
+        >> 线 ¶
+    }
+
+    // EN: Prints the metrics block to terminal.
+    // ES: Imprime el bloque de métricas en el terminal.
+    // ZH: 将指标块打印到终端。
+    报_打印指标(指标, 语言) {
+        标路径 = 国::国_查("行路径", 语言)
+        标总行 = 国::国_查("行总行", 语言)
+        标代码 = 国::国_查("行代码", 语言)
+        标函数 = 国::国_查("行函数", 语言)
+        标深度 = 国::国_查("行深度", 语言)
+        标复杂 = 国::国_查("行复杂", 语言)
+        标未用 = 国::国_查("行未用", 语言)
+        标覆盖 = 国::国_查("行覆盖", 语言)
+        标层   = 国::国_查("后缀层", 语言)
+        未用列 = 指标.未用
+        未用数 = 未用列$#
+        未用文 = ""
+        @ 名:未用列 {
+            ? (未用文$# > 0) { 未用文 = 未用文 $+ ", " }
+            未用文 = 未用文 $+ 名
+        }
+        未用行 = "" $++ 未用数 "  →  " 未用文
+        >> 标路径 指标.路径 ¶
+        >> 标总行 指标.总行 ¶
+        >> 标代码 指标.代码行 ¶
+        >> 标函数 指标.函数量 ¶
+        >> 标深度 指标.深度 标层 ¶
+        >> 标复杂 指标.复杂度 ¶
+        >> 标未用 未用行 ¶
+        >> 标覆盖 指标.覆盖率 ¶
+    }
+
+    // EN: Writes docs/<filename>_<lang>.md. 注释列 must be in the same order as 函列. Returns written path.
+    // ES: Escribe docs/<nombre>_<lang>.md. 注释列 en el mismo orden que 函列. Devuelve la ruta escrita.
+    // ZH: 写入 docs/<文件名>_<语言>.md。注释列 顺序需与 函列 一致。返回写入路径。
+    报_写文件(指标, 函列, 注释列, 语言) {
+        文件名 = <\ "basename '" 指标.路径 "' .zy" \>
+        文件名 = 文件名$~~["\n":""]
+        <\ "mkdir -p docs" \>
+        文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
+        临文    = "/tmp/ZyAudit/报告内容.md"
+        标指标  = 国::国_查("节指标", 语言)
+        标函文  = 国::国_查("节函文", 语言)
+        标列1   = 国::国_查("列指标", 语言)
+        标列2   = 国::国_查("列值",   语言)
+        标总行  = 国::国_查("名总行", 语言)
+        标代码  = 国::国_查("名代码", 语言)
+        标函数  = 国::国_查("名函数", 语言)
+        标深度  = 国::国_查("名深度", 语言)
+        标复杂  = 国::国_查("名复杂", 语言)
+        标覆盖  = 国::国_查("名覆盖", 语言)
+        标未用  = 国::国_查("名未用", 语言)
+        // Build unused vars string — wrap each name in backticks
+        未用列 = 指标.未用
+        未用文 = ""
+        @ 名:未用列 {
+            ? (未用文$# > 0) { 未用文 = 未用文 $+ ", " }
+            未用文 = 未用文 $+ "`" $+ 名 $+ "`"
+        }
+        函数量串 = "" $++ 指标.函数量
+        // Build markdown content
+        内容  = "# ZyAudit · " $+ 文件名 $+ ".zy\n\n"
+        内容  = 内容 $+ 标指标 $+ "\n\n"
+        内容  = 内容 $+ "| " $+ 标列1 $+ " | " $+ 标列2 $+ " |\n"
+        内容  = 内容 $+ "|---|---|\n"
+        内容  = 内容 $+ "| " $+ 标总行 $+ " | " $+ 指标.总行 $+ " |\n"
+        内容  = 内容 $+ "| " $+ 标代码 $+ " | " $+ 指标.代码行 $+ " |\n"
+        内容  = 内容 $+ "| " $+ 标函数 $+ " | " $+ 函数量串 $+ " |\n"
+        内容  = 内容 $+ "| " $+ 标深度 $+ " | " $+ 指标.深度 $+ " |\n"
+        内容  = 内容 $+ "| " $+ 标复杂 $+ " | " $+ 指标.复杂度 $+ " |\n"
+        内容  = 内容 $+ "| " $+ 标覆盖 $+ " | " $+ 指标.覆盖率 $+ " |\n"
+        内容  = 内容 $+ "| " $+ 标未用 $+ " | " $+ 未用文 $+ " |\n\n"
+        内容  = 内容 $+ "---\n\n"
+        内容  = 内容 $+ 标函文 $+ "\n\n"
+        // Append each function with its comment block
+        i = 0
+        @ 函:函列 {
+            i   = i + 1
+            注  = 注释列[i]
+            内容 = 内容 $+ "### " $+ 函.名称 $+ "\n\n"
+            内容 = 内容 $+ 注 $+ "\n\n"
+            内容 = 内容 $+ "---\n\n"
+        }
+        // Write to temp file via APOS-safe printf, then restore apostrophes
+        安全 = 内容$~~["'":"(APOS)"]
+        <\ "mkdir -p /tmp/ZyAudit" \>
+        <\ "printf '%s' '" 安全 "' > " 临文 \>
+        <\ "sed \"s/(APOS)/'/g\" " 临文 " > " 文档路径 \>
+        <~ 文档路径
+    }
+
+    // EN: Prints full terminal report: header + metrics + closing divider.
+    // ES: Imprime el reporte completo en terminal: cabecera + métricas + divisor final.
+    // ZH: 打印完整终端报告：标题 + 指标 + 结尾分隔线。
+    报_终端(指标, 语言) {
+        报_打印头(语言)
+        报_打印指标(指标, 语言)
+        >> "─────────────────────────────────────────" ¶
+    }
+
+    // EN: Main entry: print terminal report and write .md file. Returns the written file path.
+    // ES: Entrada principal: imprime reporte en terminal y escribe archivo .md. Devuelve la ruta.
+    // ZH: 主入口：打印终端报告并写入 .md 文件。返回写入路径。
+    报_生成(指标, 函列, 注释列, 语言) {
+        报_终端(指标, 语言)
+        文档路径 = 报_写文件(指标, 函列, 注释列, 语言)
+        <~ 文档路径
+    }
+}

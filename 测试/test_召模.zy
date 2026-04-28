@@ -1,0 +1,39 @@
+// Test 召模: config, binary check, connectivity, model list, model existence
+
+<# ../字审/召模 <= 模
+
+cfg = 模::模_默认配置()
+>> "主机: " cfg.主机 ¶
+>> "临目: " cfg.临目 ¶
+
+// Host normalization
+cfg2 = 模::模_设主机(cfg, "192.168.1.50")
+>> "主机（无端口）: " cfg2.主机 ¶
+
+cfg3 = 模::模_设主机(cfg, "192.168.1.50:9999")
+>> "主机（有端口）: " cfg3.主机 ¶
+
+cfg4 = 模::模_设主机(cfg, "http://服务器:11434")
+>> "主机（完整URL）: " cfg4.主机 ¶
+
+// Binary presence
+已装 = 模::模_已装()
+>> "已安装: " 已装 ¶
+
+// Service connectivity
+联通 = 模::模_检查(cfg)
+>> "联通: " 联通 ¶
+
+// Model list and existence — only when Ollama is running
+? 联通 {
+    列表 = 模::模_列表(cfg)
+    >> "模型列表: " 列表 ¶
+
+    存在 = 模::模_存在("qwen2.5-coder", cfg)
+    >> "qwen2.5-coder 已装: " 存在 ¶
+
+    不存在 = 模::模_存在("模型不存在xyz", cfg)
+    >> "模型不存在xyz 已装: " 不存在 ¶
+} _ {
+    >> "Ollama 不可达 — 跳过模型检查" ¶
+}

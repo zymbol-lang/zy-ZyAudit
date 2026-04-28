@@ -1,0 +1,102 @@
+// EN: 召模.zy — Ollama client for ZyAudit. Prefix: 模
+// ES: 召模.zy — cliente Ollama para ZyAudit. Prefijo: 模
+// ZH: 召模.zy — ZyAudit 的 Ollama 客户端。导出前缀：模
+// Stateless: config travels as tuple (主机, 临目) to avoid BUG-001 (re-export scope loss).
+
+# .召模 {
+    #> {
+        模_默认配置
+        模_设主机
+        模_已装
+        模_检查
+        模_存在
+        模_列表
+        模_发送
+    }
+
+    // EN: Returns the default config tuple.
+    // ES: Devuelve el tuple de configuración por defecto.
+    // ZH: 返回默认配置元组。
+    模_默认配置() {
+        <~ (主机: "http://localhost:11434", 临目: "/tmp/ZyAudit")
+    }
+
+    // EN: Returns a new config tuple with the host updated. Accepts "ip", "ip:port", or "http://...".
+    // ES: Devuelve un nuevo tuple de config con el host actualizado. Acepta "ip", "ip:puerto" o "http://...".
+    // ZH: 返回更新了主机地址的新配置元组。接受 "ip"、"ip:端口" 或 "http://..." 格式。
+    模_设主机(配置, 地址) {
+        协议位 = 地址$?? "://"
+        新主机 = ""
+        ? (协议位$# == 0) {
+            冒位 = 地址$?? ":"
+            ? (冒位$# == 0) {
+                新主机 = "http://" $+ 地址 $+ ":11434"
+            } _ {
+                新主机 = "http://" $+ 地址
+            }
+        } _ {
+            新主机 = 地址
+        }
+        <~ (主机: 新主机, 临目: 配置.临目)
+    }
+
+    // EN: Returns #1 if the `ollama` binary is present in PATH.
+    // ES: Devuelve #1 si el binario `ollama` está en PATH.
+    // ZH: 若 `ollama` 二进制文件在 PATH 中则返回 #1。
+    模_已装() {
+        结果 = <\ "command -v ollama > /dev/null 2>&1 && echo 1 || echo 0" \>
+        <~ (结果$~~["\n":""] == "1")
+    }
+
+    // EN: Returns #1 if Ollama responds at the configured host.
+    // ES: Devuelve #1 si Ollama responde en el host configurado.
+    // ZH: 若 Ollama 在配置的主机上响应则返回 #1。
+    模_检查(配置) {
+        网址 = 配置.主机 $+ "/"
+        状态 = <\ "curl -s --connect-timeout 4 --max-time 5 -o /dev/null -w '%\{http_code\}' " 网址 \>
+        <~ (状态$~~["\n":""] == "200")
+    }
+
+    // EN: Returns #1 if the given model name is installed in Ollama.
+    // ES: Devuelve #1 si el modelo dado está instalado en Ollama.
+    // ZH: 若指定模型名已安装在 Ollama 中则返回 #1。
+    模_存在(模型, 配置) {
+        结果 = <\ "curl -s " 配置.主机 "/api/tags 2>/dev/null | jq -r '.models[].name' 2>/dev/null | grep -qx '" 模型 "' && echo 1 || echo 0" \>
+        <~ (结果$~~["\n":""] == "1")
+    }
+
+    // EN: Returns a comma-separated list of installed model names.
+    // ES: Devuelve una lista separada por comas de los modelos instalados.
+    // ZH: 返回已安装模型名称的逗号分隔列表。
+    模_列表(配置) {
+        临目   = 配置.临目
+        标签文 = 临目 $+ "/标签.json"
+        <\ "mkdir -p " 临目 \>
+        <\ "curl -s " 配置.主机 "/api/tags > " 标签文 \>
+        结果 = <\ "jq -r '[.models[].name] | join(\", \")' " 标签文 " 2>/dev/null" \>
+        <~ 结果$~~["\n":""]
+    }
+
+    // EN: Sends a prompt to /api/generate and returns the response text.
+    // ES: Envía un prompt a /api/generate y devuelve el texto de respuesta.
+    // ZH: 向 /api/generate 发送提示词并返回响应文本。
+    // Prompt written to temp file to avoid shell quoting issues.
+    // Single quotes sanitized as (APOS) — same workaround as ZethyCLI json.zy.
+    模_发送(提示, 模型, 配置) {
+        临目   = 配置.临目
+        主机   = 配置.主机
+        <\ "mkdir -p " 临目 \>
+        提示文 = 临目 $+ "/提示.txt"
+        请求文 = 临目 $+ "/请求.json"
+        响应文 = 临目 $+ "/响应.json"
+        内容文 = 临目 $+ "/内容.txt"
+        网址   = 主机 $+ "/api/generate"
+        安全   = 提示$~~["'":"(APOS)"]
+        <\ "printf '%s' '" 安全 "' > " 提示文 \>
+        <\ "jq -n --arg m '" 模型 "' --rawfile p " 提示文 " '\{model:$m,prompt:$p,stream:false\}' > " 请求文 \>
+        <\ "curl -s -X POST -H 'Content-Type: application/json' -d '@" 请求文 "' " 网址 " > " 响应文 \>
+        <\ "jq -r '.response // empty' " 响应文 " > " 内容文 " 2>/dev/null" \>
+        内容 = <\ "cat " 内容文 \>
+        <~ 内容
+    }
+}
