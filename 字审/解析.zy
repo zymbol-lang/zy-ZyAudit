@@ -1,9 +1,9 @@
 // EN: 解析.zy — reads .zy source files and extracts structural metadata. Export prefix: 解
 // ES: 解析.zy — lee archivos fuente .zy y extrae metadatos estructurales. Prefijo: 解
 // ZH: 解析.zy — 读取 .zy 源文件并提取结构元数据。导出前缀：解
-// GAP G4: { } in BashExec strings escaped as \{ \} — awk $0/$1 pass through unchanged
-// GAP-002: slice bounds don't accept inline arithmetic — pre-calculate
-// GAP-003: $++ doesn't accept parenthesized expressions — use intermediate variable
+// Note: { } in BashExec strings escaped as \{ \} (IDEA-001 discarded — intentional).
+// GAP-001 fixed (v0.0.5): arithmetic expressions in slice bounds now supported.
+// GAP-002 fixed (v0.0.5): parenthesized expressions as $++ items now supported.
 
 # 解析 {
     #> {
@@ -42,7 +42,6 @@
     // ES: Extrae declaraciones de funciones. Grep con '(' → filtrar y parsear en Zymbol.
     // ZH: 提取函数声明。策略：grep 含 '(' 的行 → 在 Zymbol 中过滤解析。
     // Returns array of named tuples: (名称, 行号, 参数量)
-    // GAP-002: slice bounds pre-calculated (inline arithmetic not supported)
     解_提取函数(路径) {
         原文 = <\ "grep -n '(' '" 路径 "' 2>/dev/null | grep -v '^\s*//' | grep -v '^\s*#'" \>
         各行 = 原文 $/ "\n"
@@ -56,17 +55,13 @@
             冒号位 = 行$?? ":"
             ? (冒号位$# == 0) { @> }
             冒点 = 冒号位[1]
-            冒前 = 冒点 - 1
-            冒后 = 冒点 + 1
-            行号 = 行$[1..冒前]
-            余文 = 行$[冒后..-1]
+            行号 = 行$[1..冒点-1]
+            余文 = 行$[冒点+1..-1]
             // Extraer nombre: texto antes del primer '('
             括位 = 余文$?? "("
             ? (括位$# == 0) { @> }
             括点 = 括位[1]
-            括前 = 括点 - 1
-            括后 = 括点 + 1
-            名   = 余文$[1..括前]
+            名   = 余文$[1..括点-1]
             名   = 名$~~[" ":""]
             // Descartar nombres vacíos o con símbolos de control Zymbol
             ? (名$# == 0) { @> }
@@ -87,18 +82,16 @@
             ? (名$? "*")  { @> }
             ? (名$? "/")  { @> }
             // Extraer parámetros entre '(' y primer ')'
-            括内 = 余文$[括后..-1]
+            括内 = 余文$[括点+1..-1]
             闭位 = 括内$?? ")"
             ? (闭位$# == 0) { @> }
             闭点 = 闭位[1]
-            闭前 = 闭点 - 1
-            参数 = 括内$[1..闭前]
+            参数 = 括内$[1..闭点-1]
             参数 = 参数$~~[" ":""]
             参数量 = "0"
             ? (参数$# > 0) {
                 参段 = 参数 $/ ","
-                数量 = 参段$#
-                参数量 = "" $++ 数量
+                参数量 = "" $++ (参段$#)
             }
             函列 = 函列 $+ (名称: 名, 行号: 行号, 参数量: 参数量)
         }

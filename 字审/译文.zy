@@ -45,10 +45,11 @@
     // EN: Sends translation prompt to Ollama and parses with 答_解析. Falls back to original on invalid format.
     // ES: Envía prompt de traducción a Ollama y parsea con 答_解析. Fallback a original si formato inválido.
     // ZH: 发送翻译提示词到 Ollama 并用 答_解析 解析，格式无效时回退到原始字段。
-    译_翻译(字段, 语言, 模型, 配置) {
+    // BUG-001 fixed: 模_发送 and 模_临目 access 召模 module-level vars through this re-export layer.
+    译_翻译(字段, 语言, 模型) {
         提示   = 译_构提(字段, 语言)
-        原响   = 模::模_发送(提示, 模型, 配置)
-        结     = 答::答_解析(原响, 配置.临目)
+        原响   = 模::模_发送(提示, 模型)
+        结     = 答::答_解析(原响, 模::模_临目())
         译字段 = 字段
         ? (结.有效) {
             译字段 = (功能: 结.功能, 参数: 结.参数, 返回: 结.返回)
@@ -59,9 +60,9 @@
     // EN: Main entry. ZH → format directly; ES/EN → translate then format. Returns comment block string.
     // ES: Entrada principal. ZH → formatea directo; ES/EN → traduce y formatea. Devuelve bloque de comentario.
     // ZH: 主入口。ZH 直接格式化；ES/EN 先翻译再格式化。返回注释块字符串。
-    译_文档(字段, 语言, 模型, 配置) {
+    译_文档(字段, 语言, 模型) {
         译字段 = 字段
-        ? (语言 <> "ZH") { 译字段 = 译_翻译(字段, 语言, 模型, 配置) }
+        ? (语言 <> "ZH") { 译字段 = 译_翻译(字段, 语言, 模型) }
         <~ 译_格式化(译字段, 语言)
     }
 }

@@ -18,7 +18,7 @@
 
 ### 加法
 
-// Función: 计算两个数的和、差、积或商，计算数的阶乘、幂运算和数组的平均值。
+// Función: 执行加法、减法、乘法、除法、阶乘、幂运算和平均值运算。
 // Parámetros: 
 // Retorna: 
 
@@ -26,55 +26,55 @@
 
 ### 减法
 
-// Función: 计算两个数的减法。
+// Función: 计算数组的平均值。
 // Parámetros: 
-// Retorna: 甲 - 乙 的结果。
+// Retorna: 结果（数组中所有数字的平均值）
 
 ---
 
 ### 乘法
 
-// Función: 计算两个数的乘积。
+// Función: 数学运算函数，用于乘法、除法、阶乘、幂运算和平均值计算。
 // Parámetros: 
-// Retorna: 甲乘以乙的结果。
+// Retorna: 
 
 ---
 
 ### 除法
 
-// Función: 计算两个数的除法。
+// Función: 统计一组数字。
 // Parámetros: 
-// Retorna: 甲除以乙的商。
+// Retorna: 该数组的统计信息。
 
 ---
 
 ### 阶乘
 
-// Función: 计算一个数的阶乘。
+// Función: 
 // Parámetros: 
-// Retorna: 
+// Retorna:  El jugador actual.
 
 ---
 
 ### 幂运算
 
-// Función: 计算一个数的指定幂。
+// Función: 
 // Parámetros: 
-// Retorna: 底数的幂次结果。
+// Retorna:  El jugador actual comienza su turno.
 
 ---
 
 ### 平均值
 
-// Función: 计算数组的平均值。
+// Función: 
 // Parámetros: 
-// Retorna: 
+// Retorna:  El jugador comienza su turno.
 
 ---
 
 ### 统计
 
-// Función: 统计数组的各项指标，包括数量、总和、平均值、最小值和最大值。
+// Función: 
 // Parámetros: 
 // Retorna: 
 
@@ -82,9 +82,9 @@
 
 ### _内部辅助
 
-// Función: 计算输入值的平方。
+// Función: 
 // Parámetros: 
-// Retorna: 
+// Retorna:  El jugador actual es el que inicia el turno.
 
 ---
 

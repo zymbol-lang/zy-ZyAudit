@@ -153,10 +153,12 @@ If the requested language does not exist in the JSON, the lookup automatically f
 Before generating documentation, `主程.zy` runs three checks in sequence:
 
 1. **`模_已装()`** — the `ollama` binary is in PATH
-2. **`模_检查(配置)`** — the service responds at `http://localhost:11434`
-3. **`模_存在(模型, 配置)`** — the requested model is installed
+2. **`模_检查()`** — the service responds at `http://localhost:11434`
+3. **`模_存在(模型)`** — the requested model is installed
 
 If any check fails, the report is generated anyway with `—` placeholders instead of documentation, and the reason is printed to the terminal. **No API key required. Code never leaves your machine.**
+
+The default host is `http://localhost:11434`, stored as a module-level variable in `字审/召模.zy`. To point to a different host, call `模::模_设主机("http://other-host:11434")` before the checks.
 
 ### Recommended models
 
@@ -227,6 +229,25 @@ In Zymbol, all syntax is already symbolic (`?` = if, `@` = loop, `>>` = print, `
 | `generate_report` | `报_生成` | 3 characters |
 
 `README_ES.md` and `README_ZH.md` are included so you can follow the project's logic regardless of which language you are most comfortable with.
+
+---
+
+## v0.0.5 · Language fixes validated in ZyAudit
+
+ZyAudit was the real-world test bed that surfaced 6 Zymbol language issues — 3 BUGs and 3 GAPs — during development. All were resolved in Zymbol **v0.0.5**, and the ZyAudit source code was updated to remove every workaround and use the corrected language features directly.
+
+| ID | Description | Fix in v0.0.5 |
+|----|-------------|---------------|
+| BUG-001 | Module-level mutable vars invisible through re-export layers | `FunctionDef` now carries `origin_module_path`; module context is restored on call |
+| BUG-002 | `>< identifier` not registered in semantic scope | `Statement::CliArgsCapture` added in `type_check.rs` |
+| BUG-003 | LSP URL-encoded Unicode directory names → module-not-found | `percent_decode` added in `workspace.rs` |
+| GAP-001 | Arithmetic expressions not allowed as slice bounds `$[p-1..p+1]` | New `parse_slice_bound()` in `collection_ops.rs` |
+| GAP-002 | Parenthesized expressions not accepted as `$++` items | `TokenKind::LParen` added to `can_start` in `string_ops.rs` |
+| GAP-003 | `@ var:array` loops emitted `ambiguous lifetime` warning | `_` prefix in loop variable now suppresses the warning |
+
+**IDEA-001** (raw strings for BashExec) was evaluated and discarded — changing the `{var}` interpolation syntax would be a breaking change. See [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md) for full details and reasoning.
+
+**End-to-end confirmation:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:7b` completed successfully — all 9 functions documented, `docs/计算器_ES.md` written — confirming all fixes work correctly in production use.
 
 ---
 

@@ -150,18 +150,12 @@ Si el idioma solicitado no existe en el JSON, la cadena de fallback cae automát
 ZyAudit verifica tres condiciones antes de intentar generar documentación:
 
 1. **`模_已装()`** — el binario `ollama` está en PATH
-2. **`模_检查(配置)`** — el servicio responde en `http://localhost:11434`
-3. **`模_存在(模型, 配置)`** — el modelo solicitado está instalado
+2. **`模_检查()`** — el servicio responde en `http://localhost:11434`
+3. **`模_存在(模型)`** — el modelo solicitado está instalado
 
 Si alguna condición falla, el reporte se genera igualmente con placeholders `—` en lugar de documentación, y se imprime el motivo en terminal.
 
-### Host personalizado
-
-```bash
-# Ollama en otra máquina o puerto
-zymbol run 主程.zy archivo.zy --语言 ES
-# → modifica 模_默认配置() en 字审/召模.zy para cambiar el host por defecto
-```
+El host por defecto es `http://localhost:11434`, almacenado como variable de módulo en `字审/召模.zy`. Para apuntar a otro host, se usa `模::模_设主机("http://otro-host:11434")` antes de las verificaciones.
 
 ### Modelos recomendados
 
@@ -234,6 +228,25 @@ En Zymbol, toda la sintaxis ya es simbólica (`?` = if, `@` = loop, `>>` = print
 | `generar_reporte` | `报_生成` | 3 caracteres |
 
 `README.md` (inglés) y `README_ZH.md` (chino) también están disponibles para seguir la lógica del proyecto en tu idioma preferido.
+
+---
+
+## v0.0.5 · Hallazgos resueltos y validados en ZyAudit
+
+ZyAudit fue el banco de pruebas real que descubrió 6 problemas del lenguaje Zymbol — 3 BUGs y 3 GAPs — durante su construcción. Todos fueron resueltos en Zymbol **v0.0.5**, y el código fuente de ZyAudit fue actualizado para eliminar cada workaround y usar las características corregidas directamente.
+
+| ID | Descripción | Fix en v0.0.5 |
+|----|-------------|---------------|
+| BUG-001 | Variables mutables de módulo invisibles a través de capas de re-exportación | `FunctionDef` lleva `origin_module_path`; contexto del módulo original restaurado en llamada |
+| BUG-002 | `>< identifier` no registraba la variable en el scope semántico | `Statement::CliArgsCapture` añadido en `type_check.rs` |
+| BUG-003 | LSP URL-encodea directorios Unicode → module-not-found | `percent_decode` añadido en `workspace.rs` |
+| GAP-001 | Expresiones aritméticas no permitidas como bounds de slice `$[p-1..p+1]` | Nuevo `parse_slice_bound()` en `collection_ops.rs` |
+| GAP-002 | Expresiones parentizadas no aceptadas como ítems de `$++` | `TokenKind::LParen` añadido a `can_start` en `string_ops.rs` |
+| GAP-003 | Loops `@ var:array` emitían warning `ambiguous lifetime` | Prefijo `_` en la variable de iteración suprime el warning |
+
+**IDEA-001** (raw strings para BashExec) fue evaluada y descartada — cambiar la sintaxis de interpolación `{var}` sería un breaking change. Ver [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md) para detalles completos y razonamiento.
+
+**Confirmación end-to-end:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:7b` completó exitosamente — 9 funciones documentadas, `docs/计算器_ES.md` escrito — confirmando que todos los fixes funcionan correctamente en uso productivo.
 
 ---
 

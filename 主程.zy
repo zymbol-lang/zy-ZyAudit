@@ -14,7 +14,6 @@
 <# ./字审/报告 <= 报
 <# ./字审/国际化 <= 国
 
-参数列 = []   // BUG-002: >< does not declare the variable in semantic scope; pre-declare to silence error
 >< 参数列
 总参 = 参数列$#
 
@@ -61,24 +60,23 @@
         // EN: Step 4 · Check Ollama: installed → running → model exists
         // ES: Paso 4 · Verificar Ollama: instalado → activo → modelo existe
         // ZH: 第四步 · 检查 Ollama：已安装 → 正在运行 → 模型存在
-        配置   = 模::模_默认配置()
         注释列 = []
 
         已装 = 模::模_已装()
-        联通 = 已装 && 模::模_检查(配置)
-        有模 = 联通 && 模::模_存在(模型, 配置)
+        联通 = 已装 && 模::模_检查()
+        有模 = 联通 && 模::模_存在(模型)
 
         ? (有模) {
-            @ 函:函列 {
-                >> "  [" 模型 生成提示 函.名称 ¶
-                提示 = 提::提_函数文档(函, 路径)
-                原响 = 模::模_发送(提示, 模型, 配置)
-                结   = 答::答_解析(原响, 配置.临目)
+            // GAP-003 fixed: @ _函:函列 suppresses ambiguous-lifetime warning; no \ 函 needed.
+            @ _函:函列 {
+                >> "  [" 模型 生成提示 _函.名称 ¶
+                提示 = 提::提_函数文档(_函, 路径)
+                原响 = 模::模_发送(提示, 模型)
+                结   = 答::答_解析(原响, 模::模_临目())
                 字段 = (功能: 结.功能, 参数: 结.参数, 返回: 结.返回)
-                注释 = 译::译_文档(字段, 语言, 模型, 配置)
+                注释 = 译::译_文档(字段, 语言, 模型)
                 注释列 = 注释列 $+ 注释
             }
-            \ 函   // GAP-003: explicit lifetime end
         } _ {
             // EN: Fallback: print reason, use placeholder comments
             // ES: Fallback: imprimir motivo, usar comentarios de placeholder
@@ -88,7 +86,7 @@
             } _? !联通 {
                 >> 不可达 ¶
             } _ {
-                列表    = 模::模_列表(配置)
+                列表    = 模::模_列表()
                 误模型  = 国::国_查("误模型", 语言)
                 >> 误模型 列表 ¶
             }

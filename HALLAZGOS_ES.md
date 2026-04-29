@@ -26,9 +26,9 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
 
 | ID | Módulo | Contexto | Estado |
 |----|--------|----------|--------|
-| [BUG-001](#bug-001--variables-mutables-de-módulo-invisibles-en-re-exports) | `召模.zy` | Variables mutables de módulo + capas de re-exportación | workaround |
-| [BUG-002](#bug-002--captura-de-cli-args--no-declara-la-variable-en-el-scope-semántico) | `主程.zy` | `>< identifier` — analizador semántico no registra la variable capturada | workaround |
-| [BUG-003](#bug-003--lsp-url-encodea-directorios-unicode-al-resolver-rutas-de-módulos) | `源码/*.zy`, `源码/国际化/*.zy` | LSP URL-encodea directorios con caracteres chinos → `module-not-found` | abierto |
+| [BUG-001](#bug-001--variables-mutables-de-módulo-invisibles-en-re-exports) | `召模.zy` | Variables mutables de módulo + capas de re-exportación | resuelto v0.0.5 |
+| [BUG-002](#bug-002--captura-de-cli-args--no-declara-la-variable-en-el-scope-semántico) | `主程.zy` | `>< identifier` — analizador semántico no registra la variable capturada | resuelto v0.0.5 |
+| [BUG-003](#bug-003--lsp-url-encodea-directorios-unicode-al-resolver-rutas-de-módulos) | `源码/*.zy`, `源码/国际化/*.zy` | LSP URL-encodea directorios con caracteres chinos → `module-not-found` | resuelto v0.0.5 |
 
 ---
 
@@ -63,7 +63,7 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
   es::verificar(cfg)   // ✓ funciona
   ```
 - **Propuesta:** El sistema de re-exportación debería preservar el scope del módulo de origen para las funciones re-exportadas, igual que lo hace para las llamadas directas.
-- **Estado:** workaround
+- **Estado:** resuelto v0.0.5
 
 ---
 
@@ -84,7 +84,7 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
   总参 = 参数列$#   // ✓ sin error
   ```
 - **Propuesta:** `>< identifier` debería registrar `identifier` como variable definida en el scope del analizador semántico, igual que cualquier asignación ordinaria.
-- **Estado:** workaround
+- **Estado:** resuelto v0.0.5
 
 ---
 
@@ -101,7 +101,7 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
   ```
 - **Workaround:** Ninguno disponible sin renombrar el directorio a ASCII. El tool funciona correctamente en ejecución; los errores son únicamente visuales en el editor.
 - **Propuesta:** El resolver de módulos del LSP debe normalizar las rutas usando el path del filesystem directamente (sin URL-encoding) al construir rutas absolutas desde importaciones relativas.
-- **Estado:** abierto
+- **Estado:** resuelto v0.0.5
 
 ---
 
@@ -111,9 +111,9 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
 
 | ID | Módulo | Capacidad ausente | Estado |
 |----|--------|-------------------|--------|
-| [GAP-001](#gap-001--bounds-aritméticos-en-slices) | `解析.zy` | Expresiones aritméticas como bounds en `$[start..end]` | workaround |
-| [GAP-002](#gap-002--expresión-parentizada-como-ítem-de-) | `解析.zy` | Expresión parentizada como ítem de `$++` | workaround |
-| [GAP-003](#gap-003--warning-ambiguous-lifetime-en-variables-de-iteración-) | todos | Warning `ambiguous lifetime` en toda variable de iteración `@ var:array` | propuesto |
+| [GAP-001](#gap-001--bounds-aritméticos-en-slices) | `解析.zy` | Expresiones aritméticas como bounds en `$[start..end]` | resuelto v0.0.5 |
+| [GAP-002](#gap-002--expresión-parentizada-como-ítem-de-) | `解析.zy` | Expresión parentizada como ítem de `$++` | resuelto v0.0.5 |
+| [GAP-003](#gap-003--warning-ambiguous-lifetime-en-variables-de-iteración-) | todos | Warning `ambiguous lifetime` en toda variable de iteración `@ var:array` | resuelto v0.0.5 |
 
 ---
 
@@ -138,7 +138,7 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
   nlin  = linea$[1..p-1]    // debería funcionar
   resto = linea$[p+1..-1]   // debería funcionar
   ```
-- **Estado:** workaround
+- **Estado:** resuelto v0.0.5
 
 ---
 
@@ -165,7 +165,7 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
   // $++ debería aceptar lo mismo:
   s = "len=" $++ (arr$#)
   ```
-- **Estado:** workaround
+- **Estado:** resuelto v0.0.5
 
 ---
 
@@ -197,7 +197,7 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
   //     ^ \ adjunto al nombre declara: "elem vive solo dentro de cada iteración"
   ```
   Esta sintaxis reutiliza el símbolo `\` ya existente en el lenguaje (`\ x` para destrucción explícita) sin introducir nueva vocabulario. El analizador semántico reconocería `var\` en la cabecera de loop como "variable de iteración con lifetime acotado" y no emitiría `ambiguous lifetime`. En loops donde la variable de iteración sí se necesite fuera del bloque (caso legítimo), se usaría la forma sin `\` y el warning actuaría como advertencia real.
-- **Estado:** propuesto
+- **Estado:** resuelto v0.0.5
 
 ---
 
@@ -217,7 +217,7 @@ Mejoras al lenguaje Zymbol inspiradas directamente en la experiencia de construi
 
 | ID | Área | Resumen | Estado |
 |----|------|---------|--------|
-| [IDEA-001](#idea-001--raw-strings-para-bashexec-complejo) | sintaxis | Raw strings para BashExec con `{` `}` literales | propuesto |
+| [IDEA-001](#idea-001--raw-strings-para-bashexec-complejo) | sintaxis | Raw strings para BashExec con `{` `}` literales | descartado |
 
 ---
 
@@ -243,19 +243,20 @@ Mejoras al lenguaje Zymbol inspiradas directamente en la experiencia de construi
   prof = <\raw "awk 'BEGIN{d=0;m=0}{...}END{print m}' '${路径}'" \>
   ```
 - **Impacto estimado:** Afecta a todo proyecto Zymbol que use BashExec con herramientas como awk, jq, sed, python3 inline, o cualquier script de shell con bloques `{ }`. Reduce la barrera de entrada para integrar comandos existentes sin traducción manual.
-- **Estado:** propuesto
+- **Decisión:** Descartado. Cambiar la sintaxis de interpolación es un breaking change de alto impacto. Las alternativas evaluadas (`$var`, `$(expr)`, backtick) tienen conflictos con los operadores de colección (`$`) o introducen nueva vocabulario sin justificación suficiente. La interpolación `{var}` se mantiene; `\{` y `\}` son el costo de usar BashExec con herramientas que emplean bloques `{ }`.
+- **Estado:** descartado
 
 ---
 
 ## Resumen de estado
 
-| Categoría | Total | Abiertos | Con workaround | Propuestos | Resueltos |
-|-----------|-------|----------|----------------|------------|-----------|
-| BUG | 3 | 1 | 2 | 0 | 0 |
-| GAP | 3 | 0 | 2 | 1 | 0 |
-| ERROR | 0 | 0 | 0 | 0 | 0 |
-| IDEA | 1 | 0 | 0 | 1 | 0 |
-| **Total** | **7** | **1** | **4** | **2** | **0** |
+| Categoría | Total | Abiertos | Con workaround | Propuestos | Resueltos | Descartados |
+|-----------|-------|----------|----------------|------------|-----------|-------------|
+| BUG | 3 | 0 | 0 | 0 | 3 | 0 |
+| GAP | 3 | 0 | 0 | 0 | 3 | 0 |
+| ERROR | 0 | 0 | 0 | 0 | 0 | 0 |
+| IDEA | 1 | 0 | 0 | 0 | 0 | 1 |
+| **Total** | **7** | **0** | **0** | **0** | **6** | **1** |
 
 ---
 
@@ -265,4 +266,19 @@ Entradas movidas aquí cuando pasan a estado `resuelto`.
 
 | ID | Título | Resuelto en | Cómo |
 |----|--------|-------------|------|
-| — | — | — | — |
+| BUG-001 | Variables mutables de módulo invisibles en re-exports | v0.0.5 | `FunctionDef` ahora lleva `origin_module_path`; `eval_traditional_function_call` carga el contexto del módulo de origen en lugar del adaptador |
+| BUG-002 | `><` no declara variable en scope semántico | v0.0.5 | Añadido `Statement::CliArgsCapture` en `type_check.rs`; `env.define_var` registra el identificador como `Array(String)` |
+| BUG-003 | LSP URL-encodea directorios Unicode | v0.0.5 | `uri_to_path` en `workspace.rs` ahora decodifica `%XX` antes de construir el `PathBuf`; función `percent_decode` sin dependencias externas |
+| GAP-001 | Bounds aritméticos en slices `$[start..end]` | v0.0.5 | Nuevo `parse_slice_bound()` en `collection_ops.rs` — envuelve `parse_postfix` con aditividad `+`/`-` sin consumir el separador `..` |
+| GAP-002 | Expresión parentizada como ítem de `$++` | v0.0.5 | En `parse_string_insert` (`string_ops.rs`): `can_start` ahora incluye `TokenKind::LParen` además de `can_juxtapose()`, sin afectar otras operaciones |
+| GAP-003 | Warning `ambiguous lifetime` en variables de iteración | v0.0.5 | En `def_use.rs`: prefijo `_` o variable pre-definida antes del loop suprimen el warning; sin nueva sintaxis |
+
+---
+
+## Historial de descartes
+
+Entradas movidas aquí cuando la propuesta se evalúa y se decide no implementar.
+
+| ID | Título | Decisión | Razón |
+|----|--------|----------|-------|
+| IDEA-001 | Raw strings para BashExec complejo | No implementado | Cambiar la sintaxis de interpolación `{var}` es un breaking change de alto impacto. Las alternativas evaluadas (`$var`, `$(expr)`, backtick) tienen conflictos con los operadores de colección (`$`) o introducen vocabulario nuevo sin justificación suficiente. El costo de escapar `\{` y `\}` en BashExec se acepta como comportamiento permanente. |

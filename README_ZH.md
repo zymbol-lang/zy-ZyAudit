@@ -159,10 +159,12 @@ zymbol run 主程.zy 源文件/计算器.zy --语言 EN --模型 deepseek-coder
 生成文档前，`主程.zy` 依次执行三级检查：
 
 1. **`模_已装()`** — `ollama` 二进制文件在 PATH 中
-2. **`模_检查(配置)`** — 服务在 `http://localhost:11434` 响应
-3. **`模_存在(模型, 配置)`** — 指定模型已安装
+2. **`模_检查()`** — 服务在 `http://localhost:11434` 响应
+3. **`模_存在(模型)`** — 指定模型已安装
 
 任意检查失败时，报告正常生成但文档字段替换为占位符 `—`，并在终端打印原因。**无需 API 密钥，代码不离开本机。**
+
+默认主机为 `http://localhost:11434`，存储于 `字审/召模.zy` 的模块级变量中。若需连接其他主机，在检查前调用 `模::模_设主机("http://其他主机:11434")`。
 
 ### 推荐模型
 
@@ -219,6 +221,25 @@ zymbol run 测试/test_析答.zy
 zymbol run 测试/test_译文.zy
 zymbol run 测试/test_solo_ES.zy   # 验证 i18n.json 查询系统
 ```
+
+---
+
+## v0.0.5 · ZyAudit 验证的语言修复
+
+ZyAudit 是发现 Zymbol 语言问题的实战测试平台：在构建过程中共记录 6 个问题——3 个 BUG 和 3 个 GAP。所有问题均在 Zymbol **v0.0.5** 中解决，ZyAudit 源代码同步更新，移除了全部临时方案，直接使用已修复的语言特性。
+
+| ID | 问题描述 | v0.0.5 修复方式 |
+|----|----------|-----------------|
+| BUG-001 | 模块级可变变量在再导出层中不可见 | `FunctionDef` 携带 `origin_module_path`，调用时恢复原模块上下文 |
+| BUG-002 | `>< identifier` 不在语义分析 scope 中注册变量 | 在 `type_check.rs` 中新增 `Statement::CliArgsCapture` |
+| BUG-003 | LSP 对 Unicode 目录名进行 URL 编码 → 模块未找到 | 在 `workspace.rs` 中添加 `percent_decode` |
+| GAP-001 | slice 边界 `$[p-1..p+1]` 不支持算术表达式 | 在 `collection_ops.rs` 中新增 `parse_slice_bound()` |
+| GAP-002 | `$++` 不接受括号表达式作为项 | 在 `string_ops.rs` 的 `can_start` 中添加 `TokenKind::LParen` |
+| GAP-003 | `@ var:array` 循环产生 `ambiguous lifetime` 警告 | 循环变量使用 `_` 前缀即可抑制警告 |
+
+**IDEA-001**（BashExec 的原始字符串）经评估后被放弃——修改 `{var}` 插值语法属于破坏性变更。完整说明见 [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md)。
+
+**端到端确认：** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:7b` 成功完成——9 个函数全部生成文档，`docs/计算器_ES.md` 已写入——证明所有修复在生产场景中均正确运行。
 
 ---
 
