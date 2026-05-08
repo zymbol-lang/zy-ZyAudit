@@ -18,73 +18,73 @@
 
 ### 加法
 
-// Función: 执行加法、减法、乘法、除法、阶乘、幂运算和平均值运算。
-// Parámetros: 
-// Retorna: 
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 减法
 
-// Función: 计算数组的平均值。
-// Parámetros: 
-// Retorna: 结果（数组中所有数字的平均值）
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 乘法
 
-// Función: 数学运算函数，用于乘法、除法、阶乘、幂运算和平均值计算。
-// Parámetros: 
-// Retorna: 
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 除法
 
-// Función: 统计一组数字。
-// Parámetros: 
-// Retorna: 该数组的统计信息。
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 阶乘
 
-// Función: 
-// Parámetros: 
-// Retorna:  El jugador actual.
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 幂运算
 
-// Función: 
-// Parámetros: 
-// Retorna:  El jugador actual comienza su turno.
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 平均值
 
-// Función: 
-// Parámetros: 
-// Retorna:  El jugador comienza su turno.
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### 统计
 
-// Función: 
-// Parámetros: 
-// Retorna: 
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 
 ### _内部辅助
 
-// Función: 
-// Parámetros: 
-// Retorna:  El jugador actual es el que inicia el turno.
+// Función: —
+// Parámetros: —
+// Retorna: —
 
 ---
 

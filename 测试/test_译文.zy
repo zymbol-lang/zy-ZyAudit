@@ -1,6 +1,6 @@
 // Test 译文: format doc fields for ZH / ES / EN (no Ollama needed)
 
-<# ../字审/译文 <= 译
+<# ../字审/译文 : 译
 
 字段 = (功能: "将两个数字相加并返回其和", 参数: "甲: 数字, 乙: 数字", 返回: "甲与乙的和")
 

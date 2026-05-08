@@ -1,6 +1,6 @@
 // Test 国际化: verify jq-based label lookup for all three languages
 
-<# ../字审/国际化 <= 国
+<# ../字审/国际化 : 国
 
 >> "=== ZH ===" ¶
 >> (国::国_查("头标题", "ZH")) ¶

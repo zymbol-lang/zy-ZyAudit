@@ -247,7 +247,7 @@ ZyAudit was the real-world test bed that surfaced 6 Zymbol language issues — 3
 
 **IDEA-001** (raw strings for BashExec) was evaluated and discarded — changing the `{var}` interpolation syntax would be a breaking change. See [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md) for full details and reasoning.
 
-**End-to-end confirmation:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:7b` completed successfully — all 9 functions documented, `docs/计算器_ES.md` written — confirming all fixes work correctly in production use.
+**End-to-end confirmation:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:latest` completed successfully — all 9 functions documented, `docs/计算器_ES.md` written — confirming all fixes work correctly in production use.
 
 ---
 

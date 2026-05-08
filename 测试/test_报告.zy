@@ -1,6 +1,6 @@
 // Test 报告: terminal output and .md generation — ZH / ES / EN
 
-<# ../字审/报告 <= 报
+<# ../字审/报告 : 报
 
 // Synthetic metrics tuple — mirrors the shape of 量_计算全部 output
 指标 = (

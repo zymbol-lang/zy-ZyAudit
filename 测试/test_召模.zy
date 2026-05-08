@@ -1,7 +1,7 @@
 // Test 召模: module-level state, host normalization, binary check, connectivity, model list, existence
 // BUG-001 fixed (v0.0.5): 主机 and 临目 are module-level variables — no config tuple needed.
 
-<# ../字审/召模 <= 模
+<# ../字审/召模 : 模
 
 // Default values from module-level variables
 >> "主机: " 模::模_主机() ¶

@@ -246,7 +246,7 @@ ZyAudit fue el banco de pruebas real que descubrió 6 problemas del lenguaje Zym
 
 **IDEA-001** (raw strings para BashExec) fue evaluada y descartada — cambiar la sintaxis de interpolación `{var}` sería un breaking change. Ver [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md) para detalles completos y razonamiento.
 
-**Confirmación end-to-end:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:7b` completó exitosamente — 9 funciones documentadas, `docs/计算器_ES.md` escrito — confirmando que todos los fixes funcionan correctamente en uso productivo.
+**Confirmación end-to-end:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:latest` completó exitosamente — 9 funciones documentadas, `docs/计算器_ES.md` escrito — confirmando que todos los fixes funcionan correctamente en uso productivo.
 
 ---
 
