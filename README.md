@@ -5,6 +5,10 @@
 > A Zymbol code auditing and documentation generation tool, written in Zymbol.  
 > Internal core uses Mandarin Chinese identifiers. Multilingual output via local Ollama.
 
+> **Validation project for Zymbol v0.0.4** — built to stress-test the language
+> at that milestone, validate Unicode/CJK identifiers as first-class citizens,
+> and document every friction point encountered in real development.
+
 ---
 
 ## What is ZyAudit?

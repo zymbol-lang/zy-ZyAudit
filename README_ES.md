@@ -5,6 +5,10 @@
 > Herramienta de auditoría y generación de documentación para Zymbol, escrita en Zymbol.  
 > Núcleo interno con identificadores en chino mandarín. Salida multilingüe vía Ollama local.
 
+> **Proyecto de validación de Zymbol v0.0.4** — construido para poner a prueba el lenguaje
+> en ese milestone, validar los identificadores Unicode/CJK como ciudadanos de primera clase
+> y documentar cada punto de fricción encontrado en el desarrollo real.
+
 ---
 
 ## ¿Qué es ZyAudit?
