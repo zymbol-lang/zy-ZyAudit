@@ -4,7 +4,7 @@
 // Inputs: 指标 (metrics tuple) · 函列 (function array) · 注释列 (formatted comment strings)
 
 # .报告 {
-    <# ./国际化 : 国
+    <# ./国际化 => 国
 
     #> {
         报_打印头

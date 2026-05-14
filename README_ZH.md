@@ -1,5 +1,7 @@
 # ZyAudit · 字审
 
+> **Revisado para v0.0.5 — 2026-05-12**
+
 [English](README.md) · [中文](README_ZH.md) · [Español](README_ES.md)
 
 > 用 Zymbol 编写的 Zymbol 代码审计与文档生成工具。  

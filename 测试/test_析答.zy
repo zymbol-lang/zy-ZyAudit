@@ -1,6 +1,6 @@
 // Test 析答: parse Ollama responses, all three languages
 
-<# ../字审/析答 : 答
+<# ../字审/析答 => 答
 
 临目 = "/tmp/ZyAudit"
 

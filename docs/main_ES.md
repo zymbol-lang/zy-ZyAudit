@@ -1,5 +1,7 @@
 # ZyAudit · main.zy
 
+> **Revisado para v0.0.5 — 2026-05-12**
+
 ## Métricas
 
 | Métrica | Valor |

@@ -1,5 +1,7 @@
 # ZyAudit · 字审
 
+> **Revisado para v0.0.5 — 2026-05-12**
+
 [English](README.md) · [中文](README_ZH.md) · [Español](README_ES.md)
 
 > A Zymbol code auditing and documentation generation tool, written in Zymbol.  
