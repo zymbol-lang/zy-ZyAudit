@@ -29,16 +29,20 @@ Cada obstáculo encontrado durante la construcción se registra en [`HALLAZGOS_E
 
 ## Instalación y requisitos
 
-- **Zymbol** instalado y en PATH (`zymbol run`, `zymbol check`)
-- **Ollama** corriendo en local (`http://localhost:11434`) con al menos un modelo instalado
-- **jq** disponible en PATH (usado para leer `i18n.json` y procesar respuestas JSON)
-- **curl** disponible en PATH (comunicación con Ollama)
+- **Zymbol v0.0.7+** instalado y en PATH — usa la librería estándar nativa
+  `std/net`, `std/json`, `std/io` (compila/instala desde `interpreter/install-zymbol.sh`).
+- **Un proveedor**, uno de:
+  - **`ollama`** (local): Ollama en `http://localhost:11434` con al menos un modelo
+  - **`gemini`** (nube): API key gratuita de <https://aistudio.google.com/apikey>,
+    en la variable de entorno `GEMINI_API_KEY`
+- **jq** — ya solo lo usa `字审/国际化.zy` para leer `i18n.json` (lookup por clave dinámica).
+  El HTTP y el JSON de las llamadas al modelo ahora son nativos (`curl` ya no es necesario).
 
 ```bash
-# Verificar requisitos
-zymbol --version
-ollama list
-which jq curl
+# Verificar
+zymbol --version          # v0.0.7+
+ollama list               # para el proveedor ollama
+echo "$GEMINI_API_KEY"    # para el proveedor gemini
 ```
 
 ---
@@ -46,23 +50,26 @@ which jq curl
 ## Uso
 
 ```
-zymbol run 主程.zy <archivo.zy> [--语言 ZH|ES|EN] [--模型 nombre]
+zymbol run 主程.zy <archivo.zy> [--语言 ZH|ES|EN] [--提供者 ollama|gemini] [--模型 nombre]
 ```
 
 | Argumento | Descripción | Por defecto |
 |-----------|-------------|-------------|
 | `<archivo.zy>` | Archivo Zymbol a auditar | — (requerido) |
 | `--语言 ZH\|ES\|EN` | Idioma del reporte | `ZH` |
-| `--模型 nombre` | Modelo Ollama a usar | `qwen2.5-coder` |
+| `--提供者 ollama\|gemini` | Proveedor: Ollama local o Gemini en la nube | `ollama` |
+| `--模型 nombre` | Modelo a usar | `qwen2.5-coder` (ollama) / `gemini-flash-latest` (gemini) |
+
+El proveedor `gemini` lee su clave de la variable de entorno `GEMINI_API_KEY`.
 
 ### Ejemplos
 
 ```bash
-# Auditoría en español con modelo por defecto
-zymbol run 主程.zy 源文件/计算器.zy --语言 ES
+# Ollama local (proveedor por defecto), reporte en español
+zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 gemma3:4b
 
-# Auditoría en inglés con modelo específico
-zymbol run 主程.zy 源文件/计算器.zy --语言 EN --模型 deepseek-coder
+# Gemini en la nube, reporte en inglés
+GEMINI_API_KEY=tu_clave zymbol run 主程.zy 源文件/计算器.zy --语言 EN --提供者 gemini
 
 # Auditoría en chino (por defecto)
 zymbol run 主程.zy 源文件/计算器.zy

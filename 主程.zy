@@ -20,19 +20,31 @@
 ? (总参 >= 1) {
 
     // EN: Parse args  ES: Leer argumentos  ZH: 解析参数
-    路径 = 参数列[1]
-    语言 = "ZH"
-    模型 = "qwen2.5-coder"
-    指   = 2
+    路径   = 参数列[1]
+    语言   = "ZH"
+    模型   = ""
+    提供者 = "ollama"
+    指     = 2
     @ 指 <= 总参 {
         标志 = 参数列[指]
         下一 = 指 + 1
         ? (标志 == "--语言" && 下一 <= 总参) { 语言 = 参数列[下一] }
         ? (标志 == "--模型" && 下一 <= 总参) { 模型 = 参数列[下一] }
+        ? (标志 == "--提供者" && 下一 <= 总参) { 提供者 = 参数列[下一] }
         指 = 指 + 1
     }
     // Normalize — unrecognized language defaults to ZH
     ? !(语言 == "ZH" || 语言 == "ES" || 语言 == "EN") { 语言 = "ZH" }
+    // Default model per provider (ollama: local coder; gemini: flash)
+    ? (模型 == "") {
+        ? (提供者 == "gemini") { 模型 = "gemini-flash-latest" } _ { 模型 = "qwen2.5-coder" }
+    }
+    // Configure the model client. For gemini, read the API key from the env.
+    模::模_设提供者(提供者)
+    ? (提供者 == "gemini") {
+        密钥 = <\ "printenv GEMINI_API_KEY" \>
+        模::模_设密钥(密钥)
+    }
 
     // EN: Validate file  ES: Validar archivo  ZH: 验证文件
     存在 = <\ "test -f '" 路径 "' && echo 1 || echo 0" \>
@@ -62,9 +74,18 @@
         // ZH: 第四步 · 检查 Ollama：已安装 → 正在运行 → 模型存在
         注释列 = []
 
-        已装 = 模::模_已装()
-        联通 = 已装 && 模::模_检查()
-        有模 = 联通 && 模::模_存在(模型)
+        // Readiness is provider-aware: gemini needs a key; ollama needs the
+        // daemon + the model installed.
+        已装 = #0
+        联通 = #0
+        有模 = #0
+        ? (提供者 == "gemini") {
+            有模 = 模::模_检查()
+        } _ {
+            已装 = 模::模_已装()
+            联通 = 已装 && 模::模_检查()
+            有模 = 联通 && 模::模_存在(模型)
+        }
 
         ? (有模) {
             // GAP-003 fixed: @ _函:函列 suppresses ambiguous-lifetime warning; no \ 函 needed.
@@ -72,7 +93,7 @@
                 >> "  [" 模型 生成提示 _函.名称 ¶
                 提示 = 提::提_函数文档(_函, 路径)
                 原响 = 模::模_发送(提示, 模型)
-                结   = 答::答_解析(原响, 模::模_临目())
+                结   = 答::答_解析(原响)
                 字段 = (功能: 结.功能, 参数: 结.参数, 返回: 结.返回)
                 注释 = 译::译_文档(字段, 语言, 模型)
                 注释列 = 注释列 $+ 注释
@@ -81,7 +102,9 @@
             // EN: Fallback: print reason, use placeholder comments
             // ES: Fallback: imprimir motivo, usar comentarios de placeholder
             // ZH: 回退：打印原因，使用占位符注释
-            ? !已装 {
+            ? (提供者 == "gemini") {
+                >> "Gemini: missing API key — export GEMINI_API_KEY · falta API key · 缺少 API 密钥" ¶
+            } _? !已装 {
                 >> 国::国_查("误未装", 语言) ¶
             } _? !联通 {
                 >> 不可达 ¶

@@ -12,18 +12,31 @@
         答_解析
     }
 
-    // EN: Strips markdown code fences and restores the APOS placeholder. Uses a temp file + sed.
-    // ES: Elimina cercas de código markdown y restaura el marcador APOS. Usa archivo temporal + sed.
-    // ZH: 删除 markdown 代码围栏并还原 APOS 占位符。通过临时文件 + sed 处理。
-    答_清理(原文, 临目) {
-        <\ "mkdir -p " 临目 \>
-        临文  = 临目 $+ "/原答.txt"
-        净文件 = 临目 $+ "/净答.txt"
-        安全  = 原文$~~["'":"(APOS)"]
-        <\ "printf '%s' '" 安全 "' > " 临文 \>
-        <\ "sed '/^[[:space:]]*```/d' " 临文 " > " 净文件 \>
-        净文 = <\ "cat " 净文件 \>
-        <~ 净文$~~["(APOS)":"'"]
+    // EN: Strips markdown code-fence lines (``` …) in pure Zymbol — no temp file,
+    //     no sed, no shell-quoting workaround.
+    // ES: Elimina líneas de cerca de código (``` …) en Zymbol puro — sin archivo
+    //     temporal, sin sed, sin sanitización de shell.
+    // ZH: 用纯 Zymbol 删除 markdown 代码围栏行（``` …）——无临时文件、无 sed。
+    答_清理(原文) {
+        各行 = 原文 $/ "\n"
+        净 = ""
+        首 = #1
+        @ 行:各行 {
+            去空 = 行$~~[" ":""]
+            是围栏 = #0
+            ? (去空$# >= 3) {
+                ? (去空$[1..3] == "```") { 是围栏 = #1 }
+            }
+            ? !是围栏 {
+                ? 首 {
+                    净 = 行
+                    首 = #0
+                } _ {
+                    净 = 净 "\n" 行
+                }
+            }
+        }
+        <~ 净
     }
 
     // EN: Returns #1 if text contains all three required doc-comment markers.
@@ -63,8 +76,8 @@
     // ES: Flujo completo: limpiar cercas → validar → extraer campos → tuple estructurado.
     // ZH: 完整流程：清除围栏 → 验证 → 提取字段 → 结构化元组。
     // Returns (有效: bool, 净文: string, 功能: string, 参数: string, 返回: string).
-    答_解析(原文, 临目) {
-        净文 = 答_清理(原文, 临目)
+    答_解析(原文) {
+        净文 = 答_清理(原文)
         有效 = 答_验证(净文)
         字段 = 答_提取字段(净文)
         <~ (有效: 有效, 净文: 净文, 功能: 字段.功能, 参数: 字段.参数, 返回: 字段.返回)

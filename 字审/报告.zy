@@ -5,6 +5,7 @@
 
 # .报告 {
     <# ./国际化 => 国
+    <# std/io   => io
 
     #> {
         报_打印头
@@ -62,9 +63,8 @@
     报_写文件(指标, 函列, 注释列, 语言) {
         文件名 = <\ "basename '" 指标.路径 "' .zy" \>
         文件名 = 文件名$~~["\n":""]
-        <\ "mkdir -p docs" \>
+        _md = io::mkdir("docs")
         文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
-        临文    = "/tmp/ZyAudit/报告内容.md"
         标指标  = 国::国_查("节指标", 语言)
         标函文  = 国::国_查("节函文", 语言)
         标列1   = 国::国_查("列指标", 语言)
@@ -107,11 +107,8 @@
             内容 = 内容 $+ 注 $+ "\n\n"
             内容 = 内容 $+ "---\n\n"
         }
-        // Write to temp file via APOS-safe printf, then restore apostrophes
-        安全 = 内容$~~["'":"(APOS)"]
-        <\ "mkdir -p /tmp/ZyAudit" \>
-        <\ "printf '%s' '" 安全 "' > " 临文 \>
-        <\ "sed \"s/(APOS)/'/g\" " 临文 " > " 文档路径 \>
+        // Write directly with std/io — no temp file, no shell-quoting workaround.
+        _w = io::write(文档路径, 内容)
         <~ 文档路径
     }
 

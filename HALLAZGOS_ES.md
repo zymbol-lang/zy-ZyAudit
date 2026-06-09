@@ -48,12 +48,12 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
 
   // i18n/召模_ES.zy
   # .召模_ES {
-      <# ../召模 <= 模
-      #> { 模::模_检查 <= verificar }
+      <# ../召模 => 模
+      #> { 模::模_检查 => verificar }
   }
 
   // consumidor
-  <# ./i18n/召模_ES <= es
+  <# ./i18n/召模_ES => es
   es::verificar()   // → Runtime error: undefined variable: '主机'
   ```
 - **Workaround:** Diseño sin estado — la configuración viaja como tuple parámetro. Las funciones no acceden a variables de módulo sino a sus parámetros:
@@ -91,12 +91,12 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
 ### BUG-003 · LSP URL-encodea directorios Unicode al resolver rutas de módulos
 
 - **Módulo:** `源码/*.zy`, `源码/国际化/*.zy` — cualquier módulo dentro de un directorio con nombre chino.
-- **Contexto:** Importaciones relativas (`<# ./召模 <= 模`, `<# ../召模 <= 模`) dentro de directorios con nombres en caracteres Unicode.
+- **Contexto:** Importaciones relativas (`<# ./召模 => 模`, `<# ../召模 => 模`) dentro de directorios con nombres en caracteres Unicode.
 - **Descripción:** El resolver de módulos del LSP URL-encodea los segmentos chinos de la ruta antes de buscar el archivo en el filesystem. El directorio `源码` se convierte en `%E6%BA%90%E7%A0%81`, produciendo un path que no existe como nombre de archivo literal. El resultado son errores `module-not-found` en el editor para todos los módulos dentro de `源码/` que importan otros módulos del mismo directorio, y para los adapters en `源码/国际化/` que importan desde `源码/`. **El CLI (`zymbol check`, `zymbol run`) resuelve los mismos paths correctamente — el bug es exclusivo del LSP.**
 - **Caso mínimo:**
   ```
   // archivo: 源码/译文.zy
-  <# ./召模 <= 模   // LSP busca %E6%BA%90%E7%A0%81/召模.zy → not found
+  <# ./召模 => 模   // LSP busca %E6%BA%90%E7%A0%81/召模.zy → not found
                     // CLI busca 源码/召模.zy → found ✓
   ```
 - **Workaround:** Ninguno disponible sin renombrar el directorio a ASCII. El tool funciona correctamente en ejecución; los errores son únicamente visuales en el editor.
@@ -113,7 +113,7 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
 |----|--------|-------------------|--------|
 | [GAP-001](#gap-001--bounds-aritméticos-en-slices) | `解析.zy` | Expresiones aritméticas como bounds en `$[start..end]` | resuelto v0.0.5 |
 | [GAP-002](#gap-002--expresión-parentizada-como-ítem-de-) | `解析.zy` | Expresión parentizada como ítem de `$++` | resuelto v0.0.5 |
-| [GAP-003](#gap-003--warning-ambiguous-lifetime-en-variables-de-iteración-) | todos | Warning `ambiguous lifetime` en toda variable de iteración `@ var:array` | resuelto v0.0.5 |
+| [GAP-003](#gap-003--warning-ambiguous-lifetime-en-variables-de-iteración-) | todos | Warning `ambiguous lifetime` en toda variable de iteración `@ var:array` | workaround v0.0.5 (warning persiste en v0.0.6) |
 
 ---
 
@@ -181,11 +181,15 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
       >> elem ¶
   }
   ```
-- **Workarounds intentados sin éxito:**
+- **Workarounds (verificados en v0.0.6):**
   ```
-  \ elem      // destrucción explícita post-loop — no suprime el warning
-  @ _elem:arr // prefijo _ — no suprime el warning
+  @ _elem:arr { >> _elem }   // prefijo _ — SÍ suprime el warning (fix v0.0.5)
+  elem = ""                  // predefinir antes del loop — SÍ suprime (fix v0.0.5)
+  @ elem:arr { >> elem }
+  \ elem                     // destrucción explícita post-loop — NO suprime
   ```
+  Nota: `_elem` suprime el warning pero NO marca la variable como no-usada,
+  aunque se lea dentro del loop — uso aceptable pero contraintuitivo.
 - **Propuesta — anotación de lifetime explícita en la cabecera del loop:**
   El warning ya sugiere `consider using explicit lifetime annotation`. La solución es introducir esa sintaxis directamente en el operador `@`, usando `\` (el operador de destrucción existente) adjunto a la variable de iteración para declarar que su lifetime queda acotado a cada iteración del loop:
   ```
@@ -197,7 +201,7 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
   //     ^ \ adjunto al nombre declara: "elem vive solo dentro de cada iteración"
   ```
   Esta sintaxis reutiliza el símbolo `\` ya existente en el lenguaje (`\ x` para destrucción explícita) sin introducir nueva vocabulario. El analizador semántico reconocería `var\` en la cabecera de loop como "variable de iteración con lifetime acotado" y no emitiría `ambiguous lifetime`. En loops donde la variable de iteración sí se necesite fuera del bloque (caso legítimo), se usaría la forma sin `\` y el warning actuaría como advertencia real.
-- **Estado:** resuelto v0.0.5
+- **Estado:** workaround v0.0.5 — el warning **sigue disparándose en v0.0.6** para la forma natural `@ var:arr` con variable de solo-lectura; se suprime con prefijo `_` o predefinición (verificado). Causa raíz en `zymbol-semantic/src/def_use.rs:536-556`: excluir la variable de loop de la auto-destrucción se implementa marcándola `is_ambiguous`, lo que dispara el warning. Eliminar el falso positivo (desacoplar ambas cosas) queda pendiente como decisión de diseño.
 
 ---
 
