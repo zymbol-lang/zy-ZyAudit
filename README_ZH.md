@@ -37,16 +37,20 @@
 
 ## 安装与依赖
 
-- **Zymbol** 已安装并在 PATH 中（`zymbol run`、`zymbol check`）
-- **Ollama** 在本机运行（`http://localhost:11434`），并已安装至少一个模型
-- **jq** 在 PATH 中（用于读取 `i18n.json` 和处理 JSON 响应）
-- **curl** 在 PATH 中（与 Ollama 通信）
+- **Zymbol v0.0.7+** 已安装并在 PATH 中 — 需要原生标准库 `std/net`、`std/json`、
+  `std/io`（用 `interpreter/install-zymbol.sh` 构建/安装）。
+- **一个提供者**，二选一：
+  - **`ollama`**（本地）：Ollama 运行于 `http://localhost:11434`，并已安装至少一个模型
+  - **`gemini`**（云端）：来自 <https://aistudio.google.com/apikey> 的免费 API 密钥，
+    设置在环境变量 `GEMINI_API_KEY` 中
+- **jq** — 现仅 `字审/国际化.zy` 用它读取 `i18n.json`（按动态键查询）。
+  模型调用的 HTTP 与 JSON 已原生化（不再需要 `curl`）。
 
 ```bash
-# 验证依赖
-zymbol --version
-ollama list
-which jq curl
+# 验证
+zymbol --version          # v0.0.7+
+ollama list               # ollama 提供者
+echo "$GEMINI_API_KEY"    # gemini 提供者
 ```
 
 ---
@@ -54,26 +58,29 @@ which jq curl
 ## 使用方法
 
 ```
-zymbol run 主程.zy <文件.zy> [--语言 ZH|ES|EN] [--模型 名称]
+zymbol run 主程.zy <文件.zy> [--语言 ZH|ES|EN] [--提供者 ollama|gemini] [--模型 名称]
 ```
 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `<文件.zy>` | 待审计的 Zymbol 文件 | — （必填） |
 | `--语言 ZH\|ES\|EN` | 报告输出语言 | `ZH` |
-| `--模型 名称` | 使用的 Ollama 模型 | `qwen2.5-coder` |
+| `--提供者 ollama\|gemini` | 模型提供者：本地 Ollama 或云端 Gemini | `ollama` |
+| `--模型 名称` | 使用的模型 | `qwen2.5-coder`（ollama）/ `gemini-flash-latest`（gemini） |
+
+`gemini` 提供者从环境变量 `GEMINI_API_KEY` 读取密钥。
 
 ### 示例
 
 ```bash
-# 中文报告（默认）
-zymbol run 主程.zy 源文件/计算器.zy
+# 本地 Ollama（默认提供者），中文报告
+zymbol run 主程.zy 源文件/计算器.zy --模型 gemma3:4b
 
-# 西班牙文报告
-zymbol run 主程.zy 源文件/计算器.zy --语言 ES
+# 本地 Ollama，西班牙文报告
+zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 gemma3:4b
 
-# 英文报告，指定模型
-zymbol run 主程.zy 源文件/计算器.zy --语言 EN --模型 deepseek-coder
+# 云端 Gemini，英文报告
+GEMINI_API_KEY=你的密钥 zymbol run 主程.zy 源文件/计算器.zy --语言 EN --提供者 gemini
 ```
 
 ---

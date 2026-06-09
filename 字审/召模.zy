@@ -1,17 +1,29 @@
-// EN: 召模.zy — Ollama client for ZyAudit. Prefix: 模
-// ES: 召模.zy — cliente Ollama para ZyAudit. Prefijo: 模
-// ZH: 召模.zy — ZyAudit 的 Ollama 客户端。导出前缀：模
-// BUG-001 fixed (v0.0.5): module-level variables preserved through re-export layers.
-// Functions access 主机 and 临目 directly — no config tuple needed.
+// EN: 召模.zy — model client for ZyAudit. Prefix: 模
+// ES: 召模.zy — cliente de modelo para ZyAudit. Prefijo: 模
+// ZH: 召模.zy — ZyAudit 的模型客户端。导出前缀：模
+//
+// Migrated to the v0.0.7 standard library (std/net, std/json, std/io): the old
+// curl/jq/temp-file plumbing is gone. Supports two providers, selectable at
+// runtime: "ollama" (local, /api/generate) and "gemini" (Google web API, auth
+// header). The only remaining BashExec call is `command -v ollama` (a CLI check).
 
 # .召模 {
-    主机 = "http://localhost:11434"
-    临目 = "/tmp/ZyAudit"
+    <# std/net  => net
+    <# std/json => json
+    <# std/io   => io
+
+    主机   = "http://localhost:11434"
+    临目   = "/tmp/ZyAudit"
+    提供者 = "ollama"
+    密钥   = ""
 
     #> {
         模_主机
         模_临目
         模_设主机
+        模_提供者
+        模_设提供者
+        模_设密钥
         模_已装
         模_检查
         模_存在
@@ -19,23 +31,13 @@
         模_发送
     }
 
-    // EN: Returns the current host URL.
-    // ES: Devuelve la URL del host actual.
-    // ZH: 返回当前主机 URL。
-    模_主机() {
-        <~ 主机
-    }
+    模_主机() { <~ 主机 }
+    模_临目() { <~ 临目 }
+    模_提供者() { <~ 提供者 }
+    模_设提供者(值) { 提供者 = 值 }
+    模_设密钥(值) { 密钥 = 值 }
 
-    // EN: Returns the configured temp directory path.
-    // ES: Devuelve la ruta del directorio temporal configurado.
-    // ZH: 返回已配置的临时目录路径。
-    模_临目() {
-        <~ 临目
-    }
-
-    // EN: Updates the host in-place. Accepts "ip", "ip:port", or "http://...".
-    // ES: Actualiza el host en el módulo. Acepta "ip", "ip:puerto" o "http://...".
-    // ZH: 直接更新模块内的主机地址。接受 "ip"、"ip:端口" 或 "http://..." 格式。
+    // EN/ES/ZH: Update host in place. Accepts "ip", "ip:port", or "http://...".
     模_设主机(地址) {
         协议位 = 地址$?? "://"
         新主机 = ""
@@ -52,60 +54,77 @@
         主机 = 新主机
     }
 
-    // EN: Returns #1 if the `ollama` binary is present in PATH.
-    // ES: Devuelve #1 si el binario `ollama` está en PATH.
-    // ZH: 若 `ollama` 二进制文件在 PATH 中则返回 #1。
+    // EN: #1 if the `ollama` binary is in PATH (CLI check — not a gap).
     模_已装() {
         结果 = <\ "command -v ollama > /dev/null 2>&1 && echo 1 || echo 0" \>
         <~ (结果$~~["\n":""] == "1")
     }
 
-    // EN: Returns #1 if Ollama responds at the configured host.
-    // ES: Devuelve #1 si Ollama responde en el host configurado.
-    // ZH: 若 Ollama 在配置的主机上响应则返回 #1。
+    // EN: Provider reachable? Gemini is "ready" if a key is set; Ollama: GET / → 200.
     模_检查() {
-        网址 = 主机 $+ "/"
-        状态 = <\ "curl -s --connect-timeout 4 --max-time 5 -o /dev/null -w '%\{http_code\}' " 网址 \>
-        <~ (状态$~~["\n":""] == "200")
+        ? (提供者 == "gemini") { <~ (密钥 <> "") }
+        根 = 主机 "/"
+        响 = net::get(根)
+        <~ (响$! == #0)
     }
 
-    // EN: Returns #1 if the given model name is installed in Ollama.
-    // ES: Devuelve #1 si el modelo dado está instalado en Ollama.
-    // ZH: 若指定模型名已安装在 Ollama 中则返回 #1。
+    // EN: Model available? Gemini skips validation; Ollama scans /api/tags.
     模_存在(模型) {
-        结果 = <\ "curl -s " 主机 "/api/tags 2>/dev/null | jq -r '.models[].name' 2>/dev/null | grep -qx '" 模型 "' && echo 1 || echo 0" \>
-        <~ (结果$~~["\n":""] == "1")
+        ? (提供者 == "gemini") { <~ #1 }
+        网址 = 主机 "/api/tags"
+        响 = net::get(网址)
+        ? 响$! { <~ #0 }
+        <~ ((响$?? 模型)$# > 0)
     }
 
-    // EN: Returns a comma-separated list of installed model names.
-    // ES: Devuelve una lista separada por comas de los modelos instalados.
-    // ZH: 返回已安装模型名称的逗号分隔列表。
+    // EN: Comma-separated list of installed Ollama models.
     模_列表() {
-        标签文 = 临目 $+ "/标签.json"
-        <\ "mkdir -p " 临目 \>
-        <\ "curl -s " 主机 "/api/tags > " 标签文 \>
-        结果 = <\ "jq -r '[.models[].name] | join(\", \")' " 标签文 " 2>/dev/null" \>
-        <~ 结果$~~["\n":""]
+        网址 = 主机 "/api/tags"
+        响 = net::get(网址)
+        ? 响$! { <~ "" }
+        数据 = json::decode(响)
+        出 = ""
+        @ 项:数据.models {
+            ? (出 == "") {
+                出 = 项.name
+            } _ {
+                出 = 出 ", " 项.name
+            }
+        }
+        <~ 出
     }
 
-    // EN: Sends a prompt to /api/generate and returns the response text.
-    // ES: Envía un prompt a /api/generate y devuelve el texto de respuesta.
-    // ZH: 向 /api/generate 发送提示词并返回响应文本。
-    // Prompt written to temp file to avoid shell quoting issues.
-    // Single quotes sanitized as (APOS) — same workaround as ZethyCLI json.zy.
+    // EN: Send a prompt and return the response text (routes to the active provider).
     模_发送(提示, 模型) {
-        <\ "mkdir -p " 临目 \>
-        提示文 = 临目 $+ "/提示.txt"
-        请求文 = 临目 $+ "/请求.json"
-        响应文 = 临目 $+ "/响应.json"
-        内容文 = 临目 $+ "/内容.txt"
-        网址   = 主机 $+ "/api/generate"
-        安全   = 提示$~~["'":"(APOS)"]
-        <\ "printf '%s' '" 安全 "' > " 提示文 \>
-        <\ "jq -n --arg m '" 模型 "' --rawfile p " 提示文 " '\{model:$m,prompt:$p,stream:false\}' > " 请求文 \>
-        <\ "curl -s -X POST -H 'Content-Type: application/json' -d '@" 请求文 "' " 网址 " > " 响应文 \>
-        <\ "jq -r '.response // empty' " 响应文 " > " 内容文 " 2>/dev/null" \>
-        内容 = <\ "cat " 内容文 \>
-        <~ 内容
+        ? (提供者 == "gemini") {
+            <~ 云_发送(提示, 模型)
+        }
+        <~ 本_发送(提示, 模型)
+    }
+
+    // EN: Ollama /api/generate (private).
+    本_发送(提示, 模型) {
+        网址 = 主机 "/api/generate"
+        请求 = (model: 模型, prompt: 提示, stream: #0)
+        响 = net::post_json(网址, json::encode(请求))
+        ? 响$! { <~ "" }
+        有 = (响$?? "response")$# > 0
+        ? 有 {
+            数据 = json::decode(响)
+            <~ 数据.response
+        }
+        <~ ""
+    }
+
+    // EN: Gemini generateContent with the X-goog-api-key header (private).
+    云_发送(提示, 模型) {
+        基   = "https://generativelanguage.googleapis.com/v1beta/models/"
+        网址 = 基 模型 ":generateContent"
+        头   = [ ("X-goog-api-key", 密钥) ]
+        请求 = (contents: [ (parts: [ (text: 提示) ]) ])
+        响 = net::post_json(网址, json::encode(请求), 头)
+        ? 响$! { <~ "" }
+        数据 = json::decode(响)
+        <~ 数据.candidates[1].content.parts[1].text
     }
 }
