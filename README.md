@@ -1,6 +1,6 @@
 # ZyAudit · 字审
 
-> **Revisado para v0.0.5 — 2026-05-12**
+> **Revised for v0.0.7 — 2026-06-19**
 
 [English](README.md) · [中文](README_ZH.md) · [Español](README_ES.md)
 
@@ -112,12 +112,13 @@ All modules live in the `字审/` directory (the project name as namespace). Eac
 |------|--------|------------|----------------|
 | `字审/解析.zy` | `解` | 解=decompose, 析=analyze | Parses the `.zy` file structure: functions, parameters, line numbers |
 | `字审/计量.zy` | `量` | 计=calculate, 量=quantity | Calculates code quality metrics |
-| `字审/构提.zy` | `提` | 构=build, 提=propose | Builds Chinese prompts for Ollama |
-| `字审/召模.zy` | `模` | 召=summon, 模=model | Ollama client: installation check, connectivity, model existence, request sending |
-| `字审/析答.zy` | `答` | 析=analyze, 答=answer | Parses the Ollama JSON response, extracts doc fields |
-| `字审/译文.zy` | `译` | 译=translate, 文=text | Multilingual formatting: ZH direct, ES/EN via Ollama translation |
-| `字审/报告.zy` | `报` | 报=report, 告=notify | Terminal output + writes `docs/*.md` files |
+| `字审/构提.zy` | `提` | 构=build, 提=propose | Builds prompts; generates docs **directly in the target language** (single call) |
+| `字审/召模.zy` | `模` | 召=summon, 模=model | Model client (Ollama/Gemini) over the `标准库` layer: install/connectivity checks, send, retry |
+| `字审/析答.zy` | `答` | 析=analyze, 答=answer | Cleans the model response (strips code fences) |
+| `字审/译文.zy` | `译` | 译=translate, 文=text | Formats output with per-language labels |
+| `字审/报告.zy` | `报` | 报=report, 告=notify | Terminal output + writes `docs/*.md` (per-function docs or program overview) |
 | `字审/国际化.zy` | `国` | 国=country/language | Reads interface labels from `i18n.json` via `jq` |
+| `字审/标准库/` | `网络·编解·文件·词典` | — | **Mandarin i18n layer for the stdlib**: `std/net·json·io` adapters + key glossary |
 | `主程.zy` | — | 主=main, 程=program | Entry point: parses CLI args, coordinates all modules |
 
 ---
@@ -131,14 +132,21 @@ Function list · parameters · line numbers
     ↓  量  calculate metrics
 Lines · nesting depth · complexity · unused symbols
     ↓  报  print header + metrics to terminal
-    ↓  模  three-stage check
-         模_已装() → 模_检查() → 模_存在()
-    ↓  提  build Chinese prompt per function
-    ↓  模  模_发送() → Ollama /api/generate
-    ↓  答  parse response, extract function/params/return fields
-    ↓  译  if ES or EN, translate then format
+    ↓  模  provider readiness
+         ollama: 模_已装() → 模_检查() → 模_存在()   ·   gemini: key present
+    ↓                ┌─ has functions ──────────────────────────────┐
+    ↓  提/模/答/报   │ per function: prompt in target language → 模_发送 │
+    ↓                │ → clean response → write per-function docs     │
+    ↓                └───────────────────────────────────────────────┘
+    ↓                ┌─ no functions (entry point) ─────────────────┐
+    ↓  提/模/报      │ program overview in the target language        │
+    ↓                └───────────────────────────────────────────────┘
     ↓  报  write docs/<name>_<LANG>.md
 ```
+
+> **Direct generation (v0.0.7):** docs are produced **directly in the target language**
+> in a single call; there is no separate translation pass anymore. This removed the brittle
+> "generate-in-Chinese → translate" pipeline and halves the number of model calls.
 
 ---
 
@@ -155,6 +163,35 @@ Interface labels (headers, metric names, progress messages) are read dynamically
 ```
 
 If the requested language does not exist in the JSON, the lookup automatically falls back to `ZH`.
+
+---
+
+## Mandarin i18n layer for the stdlib (`字审/标准库/`)
+
+ZyAudit consumes the standard library **without leaking any English name into the Mandarin
+code**, applying the language's three-layer i18n pattern:
+
+| File | Re-exports | Reads as |
+|------|------------|----------|
+| `标准库/网络.zy` | `std/net` | `网络::获取` (get) · `网络::发送数据` (post_json) |
+| `标准库/编解.zy` | `std/json` | `编解::解码` (decode) · `编解::编码` (encode) |
+| `标准库/文件.zy` | `std/io` | `文件::写入` (write) · `文件::建目录` (mkdir) |
+
+**Data-level i18n.** The **keys** of external API JSON (Ollama/Gemini: `candidates`, `models`,
+`response`…) would stay in English. `编解::解码` transparently applies a **single glossary**
+(private `词典()` in `编解.zy`) that recursively renames those keys to Mandarin, backed by the
+native `std/json::decode_map` function (v0.0.7). The logic then reads
+`数据.候选[1].内容.片段[1].文本` instead of `数据.candidates[1].content.parts[1].text`.
+The glossary is defined **once** and shared by every consumer.
+
+---
+
+## Program-level documentation
+
+Entry-point files (orchestrators like `serpiente.zy`) have **no functions** to document.
+For them ZyAudit generates a **program overview** (a "Program overview" section in the `.md`):
+a paragraph in the target language describing the program's purpose, main flow, and the
+modules it depends on, derived from the source.
 
 ---
 
@@ -194,7 +231,11 @@ ZyAudit/
 │   ├── 析答.zy
 │   ├── 译文.zy
 │   ├── 报告.zy
-│   └── 国际化.zy
+│   ├── 国际化.zy
+│   └── 标准库/              # Mandarin i18n layer for the stdlib
+│       ├── 网络.zy          # std/net adapter
+│       ├── 编解.zy          # std/json adapter + 词典() glossary
+│       └── 文件.zy          # std/io adapter
 ├── 测试/                    # Per-module tests
 │   ├── test_解析.zy
 │   ├── test_计量.zy
@@ -258,6 +299,22 @@ ZyAudit was the real-world test bed that surfaced 6 Zymbol language issues — 3
 **IDEA-001** (raw strings for BashExec) was evaluated and discarded — changing the `{var}` interpolation syntax would be a breaking change. See [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md) for full details and reasoning.
 
 **End-to-end confirmation:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:latest` completed successfully — all 9 functions documented, `docs/计算器_ES.md` written — confirming all fixes work correctly in production use.
+
+---
+
+## v0.0.7 · What's new
+
+| Change | Detail |
+|--------|--------|
+| **Stdlib i18n layer** | `字审/标准库/` (网络·编解·文件) re-exports `std/net·json·io` under Mandarin names — zero English in the code |
+| **Data-level i18n** | `编解::解码` applies a single glossary (`词典()`) that renames external-API keys via `std/json::decode_map` (new native function) |
+| **Direct generation** | Docs are generated directly in the target language (1 call); the brittle translation pass is gone |
+| **Program overview** | Files with no functions (entry points) get a program overview instead of per-function docs |
+| **Robust client** | Fixed the `\n` in the Gemini API key (broke the HTTP header) + per-minute rate-limit retry |
+| **Bounded source** | Each per-function prompt is limited to its own code (no documenting neighbors) |
+
+> Quota note: the Gemini free tier allows ~20 requests/day per model. To audit several
+> modules at once, prefer local Ollama or space the runs out.
 
 ---
 

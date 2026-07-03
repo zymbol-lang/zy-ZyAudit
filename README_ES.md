@@ -1,6 +1,6 @@
 # ZyAudit · 字审
 
-> **Revisado para v0.0.5 — 2026-05-12**
+> **Revisado para v0.0.7 — 2026-06-19**
 
 [English](README.md) · [中文](README_ZH.md) · [Español](README_ES.md)
 
@@ -112,12 +112,13 @@ Todos los módulos viven en la carpeta `字审/` (el nombre del proyecto como na
 |---------|---------|------------|-----------------|
 | `字审/解析.zy` | `解` | 解=descomponer, 析=analizar | Parsea la estructura del archivo `.zy` |
 | `字审/计量.zy` | `量` | 计=calcular, 量=cantidad | Calcula métricas de calidad |
-| `字审/构提.zy` | `提` | 构=construir, 提=proponer | Arma los prompts en chino para Ollama |
-| `字审/召模.zy` | `模` | 召=convocar, 模=modelo | Cliente Ollama: instalación, conectividad, envío |
-| `字审/析答.zy` | `答` | 析=analizar, 答=respuesta | Parsea la respuesta de Ollama |
-| `字审/译文.zy` | `译` | 译=traducir, 文=texto | Formatea la salida en ZH / ES / EN |
-| `字审/报告.zy` | `报` | 报=reportar, 告=notificar | Terminal + escritura de `.md` |
+| `字审/构提.zy` | `提` | 构=construir, 提=proponer | Arma los prompts; genera la doc **directamente en el idioma destino** (una sola llamada) |
+| `字审/召模.zy` | `模` | 召=convocar, 模=modelo | Cliente de modelo (Ollama/Gemini) sobre la capa `标准库`: instalación, conectividad, envío, reintento |
+| `字审/析答.zy` | `答` | 析=analizar, 答=respuesta | Limpia la respuesta del modelo (quita cercas de código) |
+| `字审/译文.zy` | `译` | 译=traducir, 文=texto | Formatea la salida con etiquetas por idioma |
+| `字审/报告.zy` | `报` | 报=reportar, 告=notificar | Terminal + escritura de `.md` (doc por función o resumen de programa) |
 | `字审/国际化.zy` | `国` | 国=país/idioma | Lee etiquetas desde `i18n.json` vía `jq` |
+| `字审/标准库/` | `网络·编解·文件·词典` | — | **Capa i18n de la stdlib en mandarín**: adaptadores de `std/net·json·io` + glosario de claves |
 | `主程.zy` | — | 主=principal, 程=programa | Punto de entrada, coordina todos los módulos |
 
 ---
@@ -131,14 +132,21 @@ Lista de funciones · parámetros · número de línea
     ↓  量  cálculo de métricas
 Líneas · profundidad · complejidad · símbolos sin usar
     ↓  报  imprime cabecera + métricas en terminal
-    ↓  模  verifica instalación → conectividad → modelo
-         模_已装() → 模_检查() → 模_存在()
-    ↓  提  construye prompt en chino por función
-    ↓  模  envía prompt a Ollama (模_发送)
-    ↓  答  parsea respuesta JSON
-    ↓  译  traduce al idioma de salida (si ES o EN)
+    ↓  模  verifica disponibilidad del proveedor
+         ollama: 模_已装() → 模_检查() → 模_存在()   ·   gemini: clave presente
+    ↓                ┌─ con funciones ──────────────────────────────┐
+    ↓  提/模/答/报   │ por función: prompt en idioma destino → 模_发送 │
+    ↓                │ → limpia respuesta → escribe docs por función  │
+    ↓                └───────────────────────────────────────────────┘
+    ↓                ┌─ sin funciones (entry point) ────────────────┐
+    ↓  提/模/报      │ resumen de programa en idioma destino         │
+    ↓                └───────────────────────────────────────────────┘
     ↓  报  escribe docs/<nombre>_<LANG>.md
 ```
+
+> **Generación directa (v0.0.7):** la doc se genera **directamente en el idioma destino**
+> en una sola llamada; ya no hay paso de traducción posterior. Esto eliminó la fragilidad
+> de "generar en chino → traducir" y reduce a la mitad las llamadas al modelo.
 
 ---
 
@@ -155,6 +163,35 @@ Las etiquetas de la interfaz (cabeceras, nombres de métricas, mensajes de progr
 ```
 
 Si el idioma solicitado no existe en el JSON, la cadena de fallback cae automáticamente a `ZH`.
+
+---
+
+## Capa i18n de la stdlib en mandarín (`字审/标准库/`)
+
+ZyAudit consume la librería estándar **sin que ningún nombre en inglés se filtre al código
+mandarín**, aplicando el patrón de tres capas de i18n del lenguaje:
+
+| Archivo | Reexporta | Lee como |
+|---------|-----------|----------|
+| `标准库/网络.zy` | `std/net` | `网络::获取` (get) · `网络::发送数据` (post_json) |
+| `标准库/编解.zy` | `std/json` | `编解::解码` (decode) · `编解::编码` (encode) |
+| `标准库/文件.zy` | `std/io` | `文件::写入` (write) · `文件::建目录` (mkdir) |
+
+**i18n de datos.** Las **claves** del JSON de las APIs externas (Ollama/Gemini: `candidates`,
+`models`, `response`…) seguirían en inglés. `编解::解码` aplica de forma transparente un
+**glosario único** (función privada `词典()` en `编解.zy`) que renombra esas claves a mandarín
+de forma recursiva, apoyándose en la función nativa `std/json::decode_map` (v0.0.7). Así la
+lógica lee `数据.候选[1].内容.片段[1].文本` en vez de `数据.candidates[1].content.parts[1].text`.
+El glosario se define **una sola vez** y lo comparten todos los consumidores.
+
+---
+
+## Documentación a nivel de programa
+
+Los archivos de entrada (orquestadores como `serpiente.zy`) **no tienen funciones** que
+documentar. Para ellos ZyAudit genera un **resumen del programa** (sección "Resumen del
+programa" en el `.md`): un párrafo en el idioma destino con el propósito, el flujo principal y
+los módulos de los que depende, generado a partir del código fuente.
 
 ---
 
@@ -194,7 +231,11 @@ ZyAudit/
 │   ├── 析答.zy
 │   ├── 译文.zy
 │   ├── 报告.zy
-│   └── 国际化.zy
+│   ├── 国际化.zy
+│   └── 标准库/              # Capa i18n de la stdlib en mandarín
+│       ├── 网络.zy          # adaptador de std/net
+│       ├── 编解.zy          # adaptador de std/json + glosario 词典()
+│       └── 文件.zy          # adaptador de std/io
 ├── 测试/                    # Tests por módulo
 │   ├── test_解析.zy
 │   ├── test_计量.zy
@@ -260,6 +301,22 @@ ZyAudit fue el banco de pruebas real que descubrió 6 problemas del lenguaje Zym
 **IDEA-001** (raw strings para BashExec) fue evaluada y descartada — cambiar la sintaxis de interpolación `{var}` sería un breaking change. Ver [`HALLAZGOS_ES.md`](HALLAZGOS_ES.md) para detalles completos y razonamiento.
 
 **Confirmación end-to-end:** `zymbol run 主程.zy 源文件/计算器.zy --语言 ES --模型 codegemma:latest` completó exitosamente — 9 funciones documentadas, `docs/计算器_ES.md` escrito — confirmando que todos los fixes funcionan correctamente en uso productivo.
+
+---
+
+## v0.0.7 · Novedades
+
+| Cambio | Detalle |
+|--------|---------|
+| **Capa i18n de stdlib** | `字审/标准库/` (网络·编解·文件) reexporta `std/net·json·io` con nombres en mandarín — cero inglés en el código |
+| **i18n de datos** | `编解::解码` aplica un glosario único (`词典()`) que renombra las claves de las APIs externas vía `std/json::decode_map` (función nativa nueva) |
+| **Generación directa** | La doc se genera directamente en el idioma destino (1 llamada); se eliminó el paso de traducción frágil |
+| **Resumen de programa** | Los archivos sin funciones (entry points) reciben un resumen del programa en vez de doc por función |
+| **Cliente robusto** | Fix del `\n` en la API key de Gemini (rompía el header HTTP) + reintento ante rate-limit por minuto |
+| **Fuente acotada** | El prompt por función se limita a su propio código (no documenta funciones vecinas) |
+
+> Nota de cuota: el free tier de Gemini permite ~20 peticiones/día por modelo. Para
+> auditar varios módulos a la vez, considera Ollama local o espaciar las corridas.
 
 ---
 

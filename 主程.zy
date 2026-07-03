@@ -42,8 +42,10 @@
     // Configure the model client. For gemini, read the API key from the env.
     模::模_设提供者(提供者)
     ? (提供者 == "gemini") {
+        // Strip the trailing newline from printenv — an \n in the X-goog-api-key
+        // HTTP header is invalid and makes every Gemini request fail silently.
         密钥 = <\ "printenv GEMINI_API_KEY" \>
-        模::模_设密钥(密钥)
+        模::模_设密钥(密钥$~~["\n":""])
     }
 
     // EN: Validate file  ES: Validar archivo  ZH: 验证文件
@@ -73,6 +75,9 @@
         // ES: Paso 4 · Verificar Ollama: instalado → activo → modelo existe
         // ZH: 第四步 · 检查 Ollama：已安装 → 正在运行 → 模型存在
         注释列 = []
+        // Target-language name ("中文" | "español" | "English"): docs are generated
+        // directly in this language in a single LLM call (no fragile translate step).
+        目语 = 国::国_查("译目语", 语言)
 
         // Readiness is provider-aware: gemini needs a key; ollama needs the
         // daemon + the model installed.
@@ -87,21 +92,10 @@
             有模 = 联通 && 模::模_存在(模型)
         }
 
-        ? (有模) {
-            // GAP-003 fixed: @ _函:函列 suppresses ambiguous-lifetime warning; no \ 函 needed.
-            @ _函:函列 {
-                >> "  [" 模型 生成提示 _函.名称 ¶
-                提示 = 提::提_函数文档(_函, 路径)
-                原响 = 模::模_发送(提示, 模型)
-                结   = 答::答_解析(原响)
-                字段 = (功能: 结.功能, 参数: 结.参数, 返回: 结.返回)
-                注释 = 译::译_文档(字段, 语言, 模型)
-                注释列 = 注释列 $+ 注释
-            }
-        } _ {
-            // EN: Fallback: print reason, use placeholder comments
-            // ES: Fallback: imprimir motivo, usar comentarios de placeholder
-            // ZH: 回退：打印原因，使用占位符注释
+        // EN: If the model is unavailable, print the reason once (used by both branches).
+        // ES: Si el modelo no está disponible, imprime el motivo una vez (ambas ramas).
+        // ZH: 模型不可用时，打印一次原因（两条分支共用）。
+        ? !(有模) {
             ? (提供者 == "gemini") {
                 >> "Gemini: missing API key — export GEMINI_API_KEY · falta API key · 缺少 API 密钥" ¶
             } _? !已装 {
@@ -113,15 +107,54 @@
                 误模型  = 国::国_查("误模型", 语言)
                 >> 误模型 列表 ¶
             }
-            空字段 = (功能: "—", 参数: "—", 返回: "—")
-            占位   = 译::译_格式化(空字段, 语言)
-            @ _函:函列 {
-                注释列 = 注释列 $+ 占位
-            }
         }
 
-        // EN: Step 5 · Write .md report  ES: Paso 5 · Escribir reporte .md  ZH: 第五步 · 写入 .md 报告
-        文档路径 = 报::报_写文件(指标, 函列, 注释列, 语言)
+        文档路径 = ""
+        ? (函列$# == 0) {
+            // EN: Entry-point file (no functions) → program overview in 目语.
+            // ES: Archivo de entrada (sin funciones) → resumen del programa en 目语.
+            // ZH: 入口文件（无函数）→ 用 目语 生成项目概述。
+            概述 = "—"
+            ? (有模) {
+                >> "  [" 模型 生成提示 "概述" ¶
+                // Cap the source to the first 55 lines: enough for an overview, and small
+                // enough that memory-tight local models (gemma) don't crash (unexpected EOF).
+                源码 = <\ "sed -n '1,55p' '" 路径 "'" \>
+                概述 = 模::模_发送(提::提_项目概述(源码, 目语), 模型)
+            }
+            // EN: Step 5 · Write .md overview report  ES: Paso 5 · Escribir resumen .md
+            文档路径 = 报::报_写概述(指标, 概述, 语言)
+        } _ {
+            // EN: Per-function docs. Generate directly in 目语 (one call). On parse
+            //     failure, keep the cleaned raw text instead of empty/foreign fallback.
+            ? (有模) {
+                // GAP-003 fixed: @ _函:函列 suppresses ambiguous-lifetime warning; no \ 函 needed.
+                i = 0
+                @ _函:函列 {
+                    i = i + 1
+                    // Bound the source window to the next function so the model does not
+                    // document neighbors. "0" = last function.
+                    下行 = "0"
+                    ? (i < 函列$#) { 下行 = 函列[i+1].行号 }
+                    >> "  [" 模型 生成提示 _函.名称 ¶
+                    提示 = 提::提_函数文档(_函, 路径, 目语, 下行)
+                    原响 = 模::模_发送(提示, 模型)
+                    // Use the model's cleaned output directly (it is already written in
+                    // 目语). Avoids the brittle marker-parse that produced empty/dup blocks.
+                    文 = 答::答_清理(原响)
+                    ? (文 == "") { 文 = "—" }
+                    注释列 = 注释列 $+ 文
+                }
+            } _ {
+                空字段 = (功能: "—", 参数: "—", 返回: "—")
+                占位   = 译::译_格式化(空字段, 语言)
+                @ _函:函列 {
+                    注释列 = 注释列 $+ 占位
+                }
+            }
+            // EN: Step 5 · Write .md report  ES: Paso 5 · Escribir reporte .md  ZH: 第五步 · 写入 .md 报告
+            文档路径 = 报::报_写文件(指标, 函列, 注释列, 语言)
+        }
         >> "─────────────────────────────────────────" ¶
         >> "  ✓  " 文档路径 "  " 已写入 ¶
         >> "─────────────────────────────────────────" ¶
