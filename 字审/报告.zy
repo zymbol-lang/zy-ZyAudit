@@ -4,13 +4,14 @@
 // Inputs: 指标 (metrics tuple) · 函列 (function array) · 注释列 (formatted comment strings)
 
 # .报告 {
-    <# ./国际化 => 国
-    <# std/io   => io
+    <# ./国际化     => 国
+    <# ./标准库/文件 => 文件
 
     #> {
         报_打印头
         报_打印指标
         报_写文件
+        报_写概述
         报_终端
         报_生成
     }
@@ -57,25 +58,21 @@
         >> 标覆盖 指标.覆盖率 ¶
     }
 
-    // EN: Writes docs/<filename>_<lang>.md. 注释列 must be in the same order as 函列. Returns written path.
-    // ES: Escribe docs/<nombre>_<lang>.md. 注释列 en el mismo orden que 函列. Devuelve la ruta escrita.
-    // ZH: 写入 docs/<文件名>_<语言>.md。注释列 顺序需与 函列 一致。返回写入路径。
-    报_写文件(指标, 函列, 注释列, 语言) {
-        文件名 = <\ "basename '" 指标.路径 "' .zy" \>
-        文件名 = 文件名$~~["\n":""]
-        _md = io::mkdir("docs")
-        文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
-        标指标  = 国::国_查("节指标", 语言)
-        标函文  = 国::国_查("节函文", 语言)
-        标列1   = 国::国_查("列指标", 语言)
-        标列2   = 国::国_查("列值",   语言)
-        标总行  = 国::国_查("名总行", 语言)
-        标代码  = 国::国_查("名代码", 语言)
-        标函数  = 国::国_查("名函数", 语言)
-        标深度  = 国::国_查("名深度", 语言)
-        标复杂  = 国::国_查("名复杂", 语言)
-        标覆盖  = 国::国_查("名覆盖", 语言)
-        标未用  = 国::国_查("名未用", 语言)
+    // EN: Builds the report header + metrics table markdown (shared by 报_写文件 and 报_写概述).
+    //     Ends with the "---" divider. 文件名: basename without .zy.
+    // ES: Construye la cabecera + tabla de métricas (compartida por 报_写文件 y 报_写概述).
+    // ZH: 构建报告标题 + 指标表 Markdown（报_写文件 与 报_写概述 共用），以 "---" 分隔线结尾。
+    _报_指标表(指标, 文件名, 语言) {
+        标指标 = 国::国_查("节指标", 语言)
+        标列1  = 国::国_查("列指标", 语言)
+        标列2  = 国::国_查("列值",   语言)
+        标总行 = 国::国_查("名总行", 语言)
+        标代码 = 国::国_查("名代码", 语言)
+        标函数 = 国::国_查("名函数", 语言)
+        标深度 = 国::国_查("名深度", 语言)
+        标复杂 = 国::国_查("名复杂", 语言)
+        标覆盖 = 国::国_查("名覆盖", 语言)
+        标未用 = 国::国_查("名未用", 语言)
         // Build unused vars string — wrap each name in backticks
         未用列 = 指标.未用
         未用文 = ""
@@ -84,7 +81,6 @@
             未用文 = 未用文 $+ "`" $+ 名 $+ "`"
         }
         函数量串 = "" $++ 指标.函数量
-        // Build markdown content
         内容  = "# ZyAudit · " $+ 文件名 $+ ".zy\n\n"
         内容  = 内容 $+ 标指标 $+ "\n\n"
         内容  = 内容 $+ "| " $+ 标列1 $+ " | " $+ 标列2 $+ " |\n"
@@ -97,7 +93,20 @@
         内容  = 内容 $+ "| " $+ 标覆盖 $+ " | " $+ 指标.覆盖率 $+ " |\n"
         内容  = 内容 $+ "| " $+ 标未用 $+ " | " $+ 未用文 $+ " |\n\n"
         内容  = 内容 $+ "---\n\n"
-        内容  = 内容 $+ 标函文 $+ "\n\n"
+        <~ 内容
+    }
+
+    // EN: Writes docs/<filename>_<lang>.md. 注释列 must be in the same order as 函列. Returns written path.
+    // ES: Escribe docs/<nombre>_<lang>.md. 注释列 en el mismo orden que 函列. Devuelve la ruta escrita.
+    // ZH: 写入 docs/<文件名>_<语言>.md。注释列 顺序需与 函列 一致。返回写入路径。
+    报_写文件(指标, 函列, 注释列, 语言) {
+        文件名 = <\ "basename '" 指标.路径 "' .zy" \>
+        文件名 = 文件名$~~["\n":""]
+        _md = 文件::建目录("docs")
+        文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
+        标函文  = 国::国_查("节函文", 语言)
+        内容 = _报_指标表(指标, 文件名, 语言)
+        内容 = 内容 $+ 标函文 $+ "\n\n"
         // Append each function with its comment block
         i = 0
         @ 函:函列 {
@@ -107,8 +116,26 @@
             内容 = 内容 $+ 注 $+ "\n\n"
             内容 = 内容 $+ "---\n\n"
         }
-        // Write directly with std/io — no temp file, no shell-quoting workaround.
-        _w = io::write(文档路径, 内容)
+        // Write directly through the 文件 adapter (std/io) — no temp file, no shell-quoting workaround.
+        _w = 文件::写入(文档路径, 内容)
+        <~ 文档路径
+    }
+
+    // EN: Writes docs/<filename>_<lang>.md for an entry-point file (no functions):
+    //     metrics + a program-overview section. 概述 is already in the target language.
+    // ES: Escribe docs/<nombre>_<lang>.md para un archivo de entrada (sin funciones):
+    //     métricas + sección de resumen del programa. 概述 ya viene en el idioma destino.
+    // ZH: 为入口文件（无函数）写入 docs/<文件名>_<语言>.md：指标 + 项目概述章节。
+    报_写概述(指标, 概述, 语言) {
+        文件名 = <\ "basename '" 指标.路径 "' .zy" \>
+        文件名 = 文件名$~~["\n":""]
+        _md = 文件::建目录("docs")
+        文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
+        标概述 = 国::国_查("节概述", 语言)
+        内容 = _报_指标表(指标, 文件名, 语言)
+        内容 = 内容 $+ 标概述 $+ "\n\n"
+        内容 = 内容 $+ 概述 $+ "\n"
+        _w = 文件::写入(文档路径, 内容)
         <~ 文档路径
     }
 

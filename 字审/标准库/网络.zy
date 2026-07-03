@@ -1,0 +1,17 @@
+// EN: 网络.zy — Mandarin i18n adapter for std/net. Pure re-export layer, zero logic.
+// ES: 网络.zy — adaptador i18n en mandarín para std/net. Capa de reexportación pura, sin lógica.
+// ZH: 网络.zy — std/net 的中文 i18n 适配层。纯转出层，无任何逻辑。
+//
+// EN: Lets ZyAudit code read 网络::发送数据 instead of net::post_json, so Mandarin
+//     identifiers are never coupled to the English standard-library names.
+
+# .网络 {
+    <# std/net => _net
+
+    #> {
+        _net::get       => 获取
+        _net::post      => 提交
+        _net::post_json => 发送数据
+        _net::head      => 探头
+    }
+}

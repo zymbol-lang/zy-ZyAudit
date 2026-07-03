@@ -1,0 +1,32 @@
+// EN: 编解.zy — Mandarin i18n adapter for std/json (codec). Named 编解 to avoid colliding
+//     with the common local variable 数据 ("data").
+// ES: 编解.zy — adaptador i18n en mandarín para std/json (códec). Nombrado 编解 para no
+//     colisionar con la variable local común 数据 ("data").
+// ZH: 编解.zy — std/json 的中文 i18n 适配层（编解码）。命名为 编解 以避免与常见局部变量 数据 冲突。
+//
+// EN: 解码 applies the private 词典 glossary automatically, so decoded structures read in
+//     Mandarin with no per-module key map. 解码原 is the raw passthrough; 解码译 takes a
+//     custom map for ad-hoc overrides. 词典 is the single English→Mandarin term glossary,
+//     defined once here (Zymbol has no nested modules: one module = one file).
+
+# .编解 {
+    <# std/json => _json
+
+    #> {
+        _json::decode     => 解码原    // raw decode — keys stay in the source language
+        _json::decode_map => 解码译    // decode + a caller-supplied key map (overrides)
+        _json::encode     => 编码      // encode a value to JSON text
+        解码                           // decode + shared Mandarin glossary (default path)
+    }
+
+    // EN: The single English→Mandarin term glossary. Add a term here, in one place.
+    //     A function (not a constant) because module-level non-scalar literals are
+    //     rejected (E013). Private — not in the #> block.
+    词典() {
+        <~ (models: "型列", name: "名称", response: "答复",
+            candidates: "候选", content: "内容", parts: "片段", text: "文本")
+    }
+
+    // EN: Decode + apply the glossary transparently (the default path).
+    解码(文) { <~ _json::decode_map(文, 词典()) }
+}

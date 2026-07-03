@@ -1,0 +1,19 @@
+// EN: 文件.zy — Mandarin i18n adapter for std/io. Pure re-export layer, zero logic.
+// ES: 文件.zy — adaptador i18n en mandarín para std/io. Capa de reexportación pura, sin lógica.
+// ZH: 文件.zy — std/io 的中文 i18n 适配层。纯转出层，无任何逻辑。
+//
+// EN: Lets ZyAudit code read 文件::写入 / 文件::建目录 instead of io::write / io::mkdir.
+
+# .文件 {
+    <# std/io => _io
+
+    #> {
+        _io::read   => 读取
+        _io::write  => 写入
+        _io::append => 追加
+        _io::exists => 存在
+        _io::delete => 删除
+        _io::list   => 列表
+        _io::mkdir  => 建目录
+    }
+}
