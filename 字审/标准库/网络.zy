@@ -5,7 +5,7 @@
 // EN: Lets ZyAudit code read 网络::发送数据 instead of net::post_json, so Mandarin
 //     identifiers are never coupled to the English standard-library names.
 
-# .网络 {
+# .标准库_网络 {
     <# std/net => _net
 
     #> {

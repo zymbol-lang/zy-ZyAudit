@@ -4,7 +4,7 @@
 //
 // EN: Lets ZyAudit code read 文件::写入 / 文件::建目录 instead of io::write / io::mkdir.
 
-# .文件 {
+# .标准库_文件 {
     <# std/io => _io
 
     #> {

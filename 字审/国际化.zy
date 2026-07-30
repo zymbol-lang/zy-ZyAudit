@@ -4,7 +4,7 @@
 // Falls back to ZH if the requested language or key is absent.
 // To add a language: add a block to i18n.json — no code changes needed.
 
-# .国际化 {
+# .字审_国际化 {
     #> { 国_查 }
 
     // EN: Returns the label for 键 in 语言. Fallback: 语言 → ZH → empty string.

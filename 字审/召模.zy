@@ -9,7 +9,7 @@
 // runtime: "ollama" (local, /api/generate) and "gemini" (Google web API, auth
 // header). The only remaining BashExec call is `command -v ollama` (a CLI check).
 
-# .召模 {
+# .字审_召模 {
     <# ./标准库/网络 => 网络
     <# ./标准库/编解 => 编解
     <# ./标准库/文件 => 文件
