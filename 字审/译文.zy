@@ -4,7 +4,7 @@
 // ZH routes directly to formatter; ES/EN translate via Ollama first.
 // Expects doc-field tuples: (功能: string, 参数: string, 返回: string)
 
-# .译文 {
+# .字审_译文 {
     <# ./召模 => 模
     <# ./析答 => 答
     <# ./国际化 => 国

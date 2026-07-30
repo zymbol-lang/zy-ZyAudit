@@ -9,7 +9,7 @@
 //     custom map for ad-hoc overrides. 词典 is the single English→Mandarin term glossary,
 //     defined once here (Zymbol has no nested modules: one module = one file).
 
-# .编解 {
+# .标准库_编解 {
     <# std/json => _json
 
     #> {

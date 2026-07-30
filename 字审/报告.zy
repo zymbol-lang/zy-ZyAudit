@@ -3,7 +3,7 @@
 // ZH: 报告.zy — ZyAudit 的终端输出与 .md 文件生成。导出前缀：报
 // Inputs: 指标 (metrics tuple) · 函列 (function array) · 注释列 (formatted comment strings)
 
-# .报告 {
+# .字审_报告 {
     <# ./国际化     => 国
     <# ./标准库/文件 => 文件
 

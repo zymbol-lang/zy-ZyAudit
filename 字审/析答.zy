@@ -4,7 +4,7 @@
 // Stateless: temp directory passed as parameter.
 // Expects responses with three markers: // 功能：  // 参数：  // 返回：
 
-# .析答 {
+# .字审_析答 {
     #> {
         答_清理
         答_验证
