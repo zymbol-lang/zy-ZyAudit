@@ -1,18 +1,16 @@
 # ZyAudit · 计算器.zy
 
-> **Revisado para v0.0.5 — 2026-05-12**
-
 ## Métricas
 
 | Métrica | Valor |
 |---|---|
-| Líneas totales | 60 |
-| Líneas de código | 49 |
-| Funciones | 9 |
-| Anidamiento máx. | 4 |
+| Líneas totales | 52 |
+| Líneas de código | 38 |
+| Funciones | 8 |
+| Anidamiento máx. | 3 |
 | Complejidad ciclomática | 5 |
-| Cobertura de documentación | 0% |
-| Sin usar | `_临时` |
+| Cobertura de documentación | 75% |
+| Sin usar | `临时`, `_内部辅助` |
 
 ---
 
@@ -20,73 +18,65 @@
 
 ### 加法
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：将两个数字相加并返回其和
+// 参数：甲: 数字, 乙: 数字
+// 返回：甲 + 乙
 
 ---
 
 ### 减法
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：计算甲减乙的差
+// 参数：甲: 数字, 乙: 数字
+// 返回：甲 - 乙
 
 ---
 
 ### 乘法
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：计算两数之积
+// 参数：甲: 数字, 乙: 数字
+// 返回：甲 × 乙
 
 ---
 
 ### 除法
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：安全除法，除数为零时触发错误处理
+// 参数：甲: 数字, 乙: 数字（不为零）
+// 返回：甲 / 乙
 
 ---
 
 ### 阶乘
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：递归计算 n 的阶乘
+// 参数：n: 非负整数
+// 返回：n!
 
 ---
 
 ### 幂运算
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：计算甲的乙次幂
+// 参数：甲: 底数, 乙: 指数
+// 返回：甲^乙
 
 ---
 
 ### 平均值
 
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：计算数组元素的平均值
+// 参数：数组: 数字数组
+// 返回：算术平均值
 
 ---
 
 ### 统计
 
-// Función: —
-// Parámetros: —
-// Retorna: —
-
----
-
-### _内部辅助
-
-// Función: —
-// Parámetros: —
-// Retorna: —
+// 功能：汇总数组统计信息
+// 参数：数组: 数字数组
+// 返回：(数量, 和, 均, 最小, 最大)
 
 ---
 
