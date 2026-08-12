@@ -1,0 +1,4 @@
+总计=sh: 1: cannot open 源文件/计算器.zy: No such file 注释=0grep: 源文件/计算器.zy: No existe el fichero o el directorio 空行=0grep: 源文件/计算器.zy: No existe el fichero o el directorio
+深度=awk: cannot open "源文件/计算器.zy" (No such file or directory)
+函数=0
+未用=0

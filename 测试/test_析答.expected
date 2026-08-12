@@ -1,0 +1,14 @@
+=== ZH ===
+净响应 有效: #1
+功能: Adds two numbers and returns their sum.
+参数: 甲: number, 乙: number
+返回: sum of 甲 and 乙
+围栏响应 有效: #1
+功能: Computes factorial recursively.
+缺损响应 有效: #0
+=== ES ===
+válido: #1
+función: Adds two numbers and returns their sum.
+=== EN ===
+valid: #1
+function: Computes factorial recursively.

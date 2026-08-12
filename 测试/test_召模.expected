@@ -1,0 +1,10 @@
+主机: http://localhost:11434
+临目: /tmp/ZyAudit
+主机（无端口）: http://192.168.1.50:11434
+主机（有端口）: http://192.168.1.50:9999
+主机（完整URL）: http://服务器:11434
+已安装: #1
+联通: #1
+模型列表: codegemma:7b, gemma4:e2b, translategemma:12b, gemma4:e4b
+qwen2.5-coder 已装: #0
+模型不存在xyz 已装: #0
