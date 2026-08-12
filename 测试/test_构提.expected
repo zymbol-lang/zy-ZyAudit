@@ -1,0 +1,11 @@
+═══ 审计摘要提示 ═══
+以下是一份 Zymbol 源文件的代码质量审计数据，请用中文生成简洁的审计摘要（3至5句话）。
+文件：源文件/计算器.zy
+总行数：sh: 1: cannot open 源文件/计算器.zy: No such file，代码行：sh: 1: arithmetic expression: expecting EOF: "sh: 1: cannot open 源文件/计算器.zy: No such file - 0grep: 源文件/计算器.zy: No existe el fichero o el directorio - 0grep: 源文件/计算器.zy: No existe el fichero o el directorio"
+函数数量：0，密度：awk: line 1: syntax error at or near :awk: line 1: runaway regular expression /@@@@@@@@@. ... 函数/100行
+最大嵌套深度：awk: cannot open "源文件/计算器.zy" (No such file or directory)
+圈复杂度：sh: 1: arithmetic expression: expecting EOF: "0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 1"
+文档覆盖率：0%
+未使用变量数：0
+请根据以上数据评估代码质量，并给出最多三条具体改进建议。
+Runtime error: array index out of bounds: index 1 for array of length 0
