@@ -29,6 +29,7 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
 | [BUG-001](#bug-001--variables-mutables-de-módulo-invisibles-en-re-exports) | `召模.zy` | Variables mutables de módulo + capas de re-exportación | resuelto v0.0.5 |
 | [BUG-002](#bug-002--captura-de-cli-args--no-declara-la-variable-en-el-scope-semántico) | `主程.zy` | `>< identifier` — analizador semántico no registra la variable capturada | resuelto v0.0.5 |
 | [BUG-003](#bug-003--lsp-url-encodea-directorios-unicode-al-resolver-rutas-de-módulos) | `源码/*.zy`, `源码/国际化/*.zy` | LSP URL-encodea directorios con caracteres chinos → `module-not-found` | resuelto v0.0.5 |
+| [BUG-004](#bug-004--aridad-de-alias-fn-no-verificada-el-test-estaba-roto-en-tw-y-pasaba-en-vm) | `测试/test_析答.zy` | `答::答_解析` llamada con 2 argumentos; la función toma 1 | resuelto v0.0.8 |
 
 ---
 
@@ -102,6 +103,31 @@ Funcionalidades que Zymbol declara soportar pero que fallan en condiciones espec
 - **Workaround:** Ninguno disponible sin renombrar el directorio a ASCII. El tool funciona correctamente en ejecución; los errores son únicamente visuales en el editor.
 - **Propuesta:** El resolver de módulos del LSP debe normalizar las rutas usando el path del filesystem directamente (sin URL-encoding) al construir rutas absolutas desde importaciones relativas.
 - **Estado:** resuelto v0.0.5
+
+---
+
+### BUG-004 · Aridad de `alias::fn` no verificada: el test estaba roto en TW y pasaba en VM
+
+- **Módulo:** `测试/test_析答.zy`
+- **Contexto:** Llamada `答::答_解析(净响应, 临目)` — la función se declara `答_解析(原文)`, con un solo parámetro.
+- **Descripción:** El test pasaba `临目` (directorio temporal) como segundo argumento en cinco llamadas, resto de una firma anterior. `zymbol check` daba el fichero por bueno, porque la verificación de aridad solo miraba llamadas a funciones locales, no la forma `alias::fn`. El resultado es que el test **estaba roto en el tree-walker** (`Runtime error: function expects 1 arguments, got 2`) y **pasaba en la VM por accidente**: la VM no verificaba la aridad y descartaba el argumento sobrante.
+- **Caso mínimo:**
+
+  ```
+  // 析答.zy
+  # 析答 {
+      #> { 答_解析 }
+      答_解析(原文) { <~ 原文 }
+  }
+
+  // llamada
+  <# ./析答 => 答
+  >> 答::答_解析("a", "b") ¶   // check: sin errores · TW: lanza · VM: ejecuta e ignora "b"
+  ```
+
+- **Workaround:** Ninguno necesario — se corrigieron las cinco llamadas quitando `临目`, y con ellas la variable, que ya no se usaba.
+- **Propuesta:** Verificar la aridad también en la forma `alias::fn`, y hacer que la VM falle donde falla el tree-walker.
+- **Estado:** resuelto v0.0.8 — `crates/zymbol-semantic/src/call_arity.rs`; el desajuste es error semántico fatal antes de ejecutar, en las tres formas de llamada y en ambos motores. Ver `interpreter/REFERENCE.md` L28 y `interpreter/tests/arity/`. Descubierto barriendo el workspace tras el mismo fallo en `ZethyCLI/main.zy:100` (`ZethyCLI/BUGS.md` BUG-08).
 
 ---
 
@@ -256,11 +282,11 @@ Mejoras al lenguaje Zymbol inspiradas directamente en la experiencia de construi
 
 | Categoría | Total | Abiertos | Con workaround | Propuestos | Resueltos | Descartados |
 |-----------|-------|----------|----------------|------------|-----------|-------------|
-| BUG | 3 | 0 | 0 | 0 | 3 | 0 |
+| BUG | 4 | 0 | 0 | 0 | 4 | 0 |
 | GAP | 3 | 0 | 0 | 0 | 3 | 0 |
 | ERROR | 0 | 0 | 0 | 0 | 0 | 0 |
 | IDEA | 1 | 0 | 0 | 0 | 0 | 1 |
-| **Total** | **7** | **0** | **0** | **0** | **6** | **1** |
+| **Total** | **8** | **0** | **0** | **0** | **7** | **1** |
 
 ---
 
@@ -275,6 +301,7 @@ Entradas movidas aquí cuando pasan a estado `resuelto`.
 | BUG-003 | LSP URL-encodea directorios Unicode | v0.0.5 | `uri_to_path` en `workspace.rs` ahora decodifica `%XX` antes de construir el `PathBuf`; función `percent_decode` sin dependencias externas |
 | GAP-001 | Bounds aritméticos en slices `$[start..end]` | v0.0.5 | Nuevo `parse_slice_bound()` en `collection_ops.rs` — envuelve `parse_postfix` con aditividad `+`/`-` sin consumir el separador `..` |
 | GAP-002 | Expresión parentizada como ítem de `$++` | v0.0.5 | En `parse_string_insert` (`string_ops.rs`): `can_start` ahora incluye `TokenKind::LParen` además de `can_juxtapose()`, sin afectar otras operaciones |
+| BUG-004 | Aridad de `alias::fn` no verificada (test roto en TW, pasaba en VM) | v0.0.8 | `call_arity.rs` construye la tabla alias→función→aridad; la consumen `check`, `run`, `build` y el LSP. Fatal antes de ejecutar, en las tres formas de llamada |
 | GAP-003 | Warning `ambiguous lifetime` en variables de iteración | v0.0.5 | En `def_use.rs`: prefijo `_` o variable pre-definida antes del loop suprimen el warning; sin nueva sintaxis |
 
 ---
