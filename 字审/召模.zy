@@ -107,7 +107,7 @@
     // EN: Ollama /api/generate (private).
     本_发送(提示, 模型) {
         网址 = 主机 "/api/generate"
-        请求 = (model: 模型, prompt: 提示, stream: #0)
+        请求 = #(model: 模型, prompt: 提示, stream: #0)
         响 = 网络::发送数据(网址, 编解::编码(请求))
         ? 响$! { <~ "" }
         有 = (响$?? "response")$# > 0
@@ -125,7 +125,7 @@
         基   = "https://generativelanguage.googleapis.com/v1beta/models/"
         网址 = 基 模型 ":generateContent"
         头   = [ ("X-goog-api-key", 密钥) ]
-        体   = 编解::编码((contents: [ (parts: [ (text: 提示) ]) ]))
+        体   = 编解::编码(#(contents: [ #(parts: [ #(text: 提示) ]) ]))
         响 = 网络::发送数据(网址, 体, 头)
         // One short retry recovers from a transient per-minute rate-limit without
         // hanging on the daily cap (free tier: only 20 requests/day per model).
