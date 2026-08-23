@@ -23,7 +23,7 @@
     //     A function (not a constant) because module-level non-scalar literals are
     //     rejected (E013). Private — not in the #> block.
     词典() {
-        <~ (models: "型列", name: "名称", response: "答复",
+        <~ #(models: "型列", name: "名称", response: "答复",
             candidates: "候选", content: "内容", parts: "片段", text: "文本")
     }
 
