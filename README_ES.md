@@ -1,6 +1,6 @@
 # ZyAudit · 字审
 
-> **Revisado para v0.0.7 — 2026-06-19**
+> **Revisado para v0.0.8 — 2026-08-31**
 
 [English](README.md) · [中文](README_ZH.md) · [Español](README_ES.md)
 
