@@ -45,6 +45,8 @@
         // Strip the trailing newline from printenv — an \n in the X-goog-api-key
         // HTTP header is invalid and makes every Gemini request fail silently.
         密钥 = <\ "printenv GEMINI_API_KEY" \>
+        // An unset variable makes printenv exit 1 — an ##IO error since v0.0.10.
+        ? 密钥$! { 密钥 = "" }
         模::模_设密钥(密钥$~~["\n":""])
     }
 

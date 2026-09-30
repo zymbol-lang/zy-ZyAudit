@@ -1,4 +1,14 @@
-总计=sh: 1: cannot open 源文件/计算器.zy: No such file 注释=0grep: 源文件/计算器.zy: No existe el fichero o el directorio 空行=0grep: 源文件/计算器.zy: No existe el fichero o el directorio
-深度=awk: cannot open "源文件/计算器.zy" (No such file or directory)
-函数=0
-未用=0
+总计=60 注释=3 空行=8
+深度=4
+函数=9
+  加法 (行号=17 参数量=2)
+  减法 (行号=18 参数量=2)
+  乘法 (行号=19 参数量=2)
+  除法 (行号=21 参数量=2)
+  阶乘 (行号=28 参数量=1)
+  幂运算 (行号=33 参数量=2)
+  平均值 (行号=41 参数量=1)
+  统计 (行号=46 参数量=1)
+  _内部辅助 (行号=57 参数量=1)
+未用=1
+  _临时

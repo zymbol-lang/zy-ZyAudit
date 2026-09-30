@@ -1,11 +1,25 @@
 ═══ 审计摘要提示 ═══
 以下是一份 Zymbol 源文件的代码质量审计数据，请用中文生成简洁的审计摘要（3至5句话）。
 文件：源文件/计算器.zy
-总行数：sh: 1: cannot open 源文件/计算器.zy: No such file，代码行：sh: 1: arithmetic expression: expecting EOF: "sh: 1: cannot open 源文件/计算器.zy: No such file - 0grep: 源文件/计算器.zy: No existe el fichero o el directorio - 0grep: 源文件/计算器.zy: No existe el fichero o el directorio"
-函数数量：0，密度：awk: line 1: syntax error at or near :awk: line 1: runaway regular expression /@@@@@@@@@. ... 函数/100行
-最大嵌套深度：awk: cannot open "源文件/计算器.zy" (No such file or directory)
-圈复杂度：sh: 1: arithmetic expression: expecting EOF: "0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 1"
+总行数：60，代码行：49
+函数数量：9，密度：15,00 函数/100行
+最大嵌套深度：4
+圈复杂度：5
 文档覆盖率：0%
-未使用变量数：0
+未使用变量数：1
 请根据以上数据评估代码质量，并给出最多三条具体改进建议。
-Runtime error: array index out of bounds: index 1 for array of length 0
+═══ 函数文档提示：加法 ═══
+请为以下 Zymbol 函数生成简洁的文档注释，冒号后的内容用español书写。
+函数名：加法
+参数数量：2
+语言：Zymbol（无关键字符号语言，`<~` 为 return，`?` 为 if，`@` 为 loop）
+源码：
+要求：
+1. 用一句话描述函数功能
+2. 说明每个参数的含义
+3. 说明返回值
+4. 如有边界条件（如除数为零、空数组），请注明
+输出格式（仅注释文本，不加代码块标记，保持三个标记原样，只把冒号后的内容用español）：
+// 功能：...
+// 参数：...
+// 返回：...

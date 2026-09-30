@@ -44,6 +44,10 @@
     // Returns array of named tuples: (名称, 行号, 参数量)
     解_提取函数(路径) {
         原文 = <\ "grep -n '(' '" 路径 "' 2>/dev/null | grep -v '^\s*//' | grep -v '^\s*#'" \>
+        // EN: no line left makes the last grep exit 1 — an ##IO error since v0.0.10 — and means no functions.
+        // ES: si no queda ninguna línea el último grep sale con 1 (error ##IO desde v0.0.10): no hay funciones.
+        // ZH: 没有剩余行时最后的 grep 以 1 退出（自 v0.0.10 起为 ##IO 错误），即没有函数。
+        ? 原文$! { 原文 = "" }
         各行 = 原文 $/ "\n"
         函列 = []
         @ 行:各行 {

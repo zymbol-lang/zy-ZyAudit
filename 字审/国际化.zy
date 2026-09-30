@@ -12,6 +12,10 @@
     // ZH: 返回 键 在 语言 中的标签。回退链：语言 → ZH → 空字符串。
     国_查(键, 语言) {
         值 = <\ "jq -r --arg l '" 语言 "' --arg k '" 键 "' '.[$l][$k] // .ZH[$k] // \"\"' i18n.json 2>/dev/null" \>
+        // EN: jq failing (no i18n.json, no jq) is an ##IO error since v0.0.10, not "" — the fallback stays the empty string.
+        // ES: si jq falla (sin i18n.json o sin jq) es un error ##IO desde v0.0.10, no "": el fallback sigue siendo la cadena vacía.
+        // ZH: jq 失败（缺 i18n.json 或 jq）自 v0.0.10 起是 ##IO 错误而不是 ""——回退仍为空字符串。
+        ? 值$! { <~ "" }
         <~ 值$~~["\n":""]
     }
 }
