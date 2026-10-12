@@ -1,5 +1,7 @@
 # ZyAudit · 字审
 
+🌐 [zymbol-lang.org](https://zymbol-lang.org) · ▶ [playground](https://zymbol-lang.org/playground.html)
+
 > **修订至 v0.0.7 — 2026-06-19**
 
 [English](README.md) · [中文](README_ZH.md) · [Español](README_ES.md)
