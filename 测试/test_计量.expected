@@ -1,11 +1,12 @@
 路径:   源文件/计算器.zy
-总行:   sh: 1: cannot open 源文件/计算器.zy: No such file
-代码行: sh: 1: arithmetic expression: expecting EOF: "sh: 1: cannot open 源文件/计算器.zy: No such file - 0grep: 源文件/计算器.zy: No existe el fichero o el directorio - 0grep: 源文件/计算器.zy: No existe el fichero o el directorio"
-注释行: 0grep: 源文件/计算器.zy: No existe el fichero o el directorio
-空行:   0grep: 源文件/计算器.zy: No existe el fichero o el directorio
-函数量: 0
-密度:   awk: line 1: syntax error at or near :awk: line 1: runaway regular expression /@@@@@@@@@. ... func/100行
-深度:   awk: cannot open "源文件/计算器.zy" (No such file or directory)
-复杂度: sh: 1: arithmetic expression: expecting EOF: "0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 0grep: 源文件/计算器.zy: No existe el fichero o el directorio + 1"
+总行:   60
+代码行: 49
+注释行: 3
+空行:   8
+函数量: 9
+密度:   15,00 func/100行
+深度:   4
+复杂度: 5
 覆盖率: 0%
-未用:   0 → 
+未用:   1 → 
+  _临时
