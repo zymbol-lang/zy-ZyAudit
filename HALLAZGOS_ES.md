@@ -227,7 +227,7 @@ Construcciones o comportamientos que otros lenguajes tienen, que se necesitan pa
   //     ^ \ adjunto al nombre declara: "elem vive solo dentro de cada iteración"
   ```
   Esta sintaxis reutiliza el símbolo `\` ya existente en el lenguaje (`\ x` para destrucción explícita) sin introducir nueva vocabulario. El analizador semántico reconocería `var\` en la cabecera de loop como "variable de iteración con lifetime acotado" y no emitiría `ambiguous lifetime`. En loops donde la variable de iteración sí se necesite fuera del bloque (caso legítimo), se usaría la forma sin `\` y el warning actuaría como advertencia real.
-- **Estado:** resuelto v0.0.9 — `interpreter` `41f63f5` (2026-08-22, ERROR-ZYB-003 de ZyBank) separó la marca de variable de bucle (`loop_bound`) de la de lifetime ambiguo, que es lo que esta entrada pedía desacoplar. Verificado el 2026-10-25 con `zymbol 0.0.11`: el caso mínimo de arriba da *No errors or warnings*, y `主程.zy`, `测试/test_解析.zy` y `测试/test_计量.zy` dan cero avisos `ambiguous lifetime`. La propuesta `@ elem\:arr` no hizo falta.
+- **Estado:** resuelto v0.0.9 — `interpreter` `2b3e800` (2026-08-22, ERROR-ZYB-003 de ZyBank) separó la marca de variable de bucle (`loop_bound`) de la de lifetime ambiguo, que es lo que esta entrada pedía desacoplar. Verificado el 2026-10-25 con `zymbol 0.0.11`: el caso mínimo de arriba da *No errors or warnings*, y `主程.zy`, `测试/test_解析.zy` y `测试/test_计量.zy` dan cero avisos `ambiguous lifetime`. La propuesta `@ elem\:arr` no hizo falta.
 - **Estado anterior (hasta el 2026-10-25):** workaround v0.0.5 — el warning **sigue disparándose en v0.0.6** para la forma natural `@ var:arr` con variable de solo-lectura; se suprime con prefijo `_` o predefinición (verificado). Causa raíz en `zymbol-semantic/src/def_use.rs:536-556`: excluir la variable de loop de la auto-destrucción se implementa marcándola `is_ambiguous`, lo que dispara el warning. Eliminar el falso positivo (desacoplar ambas cosas) queda pendiente como decisión de diseño.
 
 ---
@@ -303,7 +303,7 @@ Entradas movidas aquí cuando pasan a estado `resuelto`.
 | GAP-001 | Bounds aritméticos en slices `$[start..end]` | v0.0.5 | Nuevo `parse_slice_bound()` en `collection_ops.rs` — envuelve `parse_postfix` con aditividad `+`/`-` sin consumir el separador `..` |
 | GAP-002 | Expresión parentizada como ítem de `$++` | v0.0.5 | En `parse_string_insert` (`string_ops.rs`): `can_start` ahora incluye `TokenKind::LParen` además de `can_juxtapose()`, sin afectar otras operaciones |
 | BUG-004 | Aridad de `alias::fn` no verificada (test roto en TW, pasaba en VM) | v0.0.8 | `call_arity.rs` construye la tabla alias→función→aridad; la consumen `check`, `run`, `build` y el LSP. Fatal antes de ejecutar, en las tres formas de llamada |
-| GAP-003 | Warning `ambiguous lifetime` en variables de iteración | v0.0.9 | v0.0.5 sólo dio el workaround (prefijo `_` o variable pre-definida antes del loop). El falso positivo lo quitó v0.0.9 (`41f63f5`): la variable de bucle lleva su propia marca, `loop_bound`, y ya no se marca ambigua. Sin nueva sintaxis |
+| GAP-003 | Warning `ambiguous lifetime` en variables de iteración | v0.0.9 | v0.0.5 sólo dio el workaround (prefijo `_` o variable pre-definida antes del loop). El falso positivo lo quitó v0.0.9 (`2b3e800`): la variable de bucle lleva su propia marca, `loop_bound`, y ya no se marca ambigua. Sin nueva sintaxis |
 
 ---
 
