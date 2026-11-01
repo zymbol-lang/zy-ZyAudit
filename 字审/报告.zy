@@ -100,7 +100,7 @@
     // ES: Escribe docs/<nombre>_<lang>.md. 注释列 en el mismo orden que 函列. Devuelve la ruta escrita.
     // ZH: 写入 docs/<文件名>_<语言>.md。注释列 顺序需与 函列 一致。返回写入路径。
     报_写文件(指标, 函列, 注释列, 语言) {
-        文件名 = <\ "basename '" 指标.路径 "' .zy" \>
+        文件名 = <\ "basename " 指标.路径 " .zy" \>
         文件名 = 文件名$~~["\n":""]
         _md = 文件::建目录("docs")
         文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
@@ -127,7 +127,7 @@
     //     métricas + sección de resumen del programa. 概述 ya viene en el idioma destino.
     // ZH: 为入口文件（无函数）写入 docs/<文件名>_<语言>.md：指标 + 项目概述章节。
     报_写概述(指标, 概述, 语言) {
-        文件名 = <\ "basename '" 指标.路径 "' .zy" \>
+        文件名 = <\ "basename " 指标.路径 " .zy" \>
         文件名 = 文件名$~~["\n":""]
         _md = 文件::建目录("docs")
         文档路径 = "docs/" $+ 文件名 $+ "_" $+ 语言 $+ ".md"
